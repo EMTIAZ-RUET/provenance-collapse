@@ -375,8 +375,49 @@
   <p>We ran an adversarial search — over a hundred search agents across roughly 190 papers from ACL, NeurIPS, ICLR and arXiv — specifically trying to find prior work that already does this. Everything nearby turned out to be a different question.</p>
   <div class="verdict"><div class="v">Unique.</div>
     <p>No published or preprint work measures invention in self-authored memory <b>as a function of model capability, across companies</b>. The one paper that even shares the name (MemIR, Jin et al., 2026) proposes a fix without ever measuring the problem — so it motivates our study rather than scooping it.</p></div>
-  <p>The other close neighbours sit on different axes. Memory benchmarks like LoCoMo (Maharana et al., 2024) and LongMemEval (Wu et al., 2025) test whether agents <i>recall</i> enough, not whether what they write is faithful. Work on inverse scaling (McKenzie et al., 2023) and TruthfulQA (Lin et al., 2022) shows bigger-is-worse on prompted question answering, a different setting. Hallucination (Maynez et al., 2020; Ji et al., 2023) and unfaithful reasoning (Turpin et al., 2023) concern single replies, not a model's durable memory. Full citations are below.</p>
+  <p>The other close neighbours sit on different axes. Memory benchmarks like LoCoMo (Maharana et al., ACL 2024) and LongMemEval (Wu et al., ICLR 2025) test whether agents <i>recall</i> enough, not whether what they write is faithful. Work on inverse scaling (McKenzie et al., TMLR 2023) and TruthfulQA (Lin et al., ACL 2022) shows bigger-is-worse on prompted question answering, a different setting. Hallucination (Maynez et al., ACL 2020; Ji et al., ACM Computing Surveys 2023) and unfaithful reasoning (Turpin et al., NeurIPS 2023) concern single replies, not a model's durable memory. Full citations, with venues, are below.</p>
 </div>
+
+<!-- EXPERIMENT LOG -->
+<div class="col">
+  <h2>Every experiment we ran</h2>
+  <p>This project did not arrive at provenance collapse in one step. It took a failed idea, two rounds of searching, and a series of cheap tests before the real study. Here is the whole path, in order, so the final result is easy to trust. Each row is one experiment.</p>
+</div>
+<figure class="wide"><div class="frame" style="padding:16px 14px">
+<style>
+.logtable{width:100%;border-collapse:collapse;font-size:14px}
+.logtable th{font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--soft);text-align:left;padding:8px 10px;border-bottom:1px solid var(--rule)}
+.logtable td{padding:9px 10px;border-bottom:1px solid var(--rule2);vertical-align:top;color:var(--body)}
+.logtable td:first-child{font-family:var(--mono);font-size:12px;color:var(--accent);white-space:nowrap}
+.logtable .ph td{background:var(--tint);font-family:var(--mono);font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--accent)}
+.logtable .res{color:var(--soft)}
+.logtable .res b{color:var(--ink)}
+</style>
+<table class="logtable">
+<tr><th>experiment</th><th>what it asked</th><th>what happened</th></tr>
+<tr class="ph"><td colspan="3">Phase 0 — the original idea: does memory drift as it is rewritten? (“Soul Drift”)</td></tr>
+<tr><td>Metric check<br>(hole&#8209;a)</td><td>Does our memory score measure real memory, or just the fixed prompt?</td><td class="res">Validated — it measures memory content, not the prompt.</td></tr>
+<tr><td>Rewrite styles<br>(H4)</td><td>Do three ways of rewriting memory drift by different amounts?</td><td class="res">Differences too small to trust at this size (noise floor).</td></tr>
+<tr><td>Long chats<br>(LoCoMo)</td><td>On real long conversations, does careful rewriting help?</td><td class="res">Yes, on time-based questions (p&nbsp;=&nbsp;0.001) — but only in mid-size models.</td></tr>
+<tr><td>Frontier check<br>(H4&#8209;DeepSeek)</td><td>Does the drift still happen on a top model?</td><td class="res"><b>No — V4-pro showed zero drift.</b> This killed the idea and forced the pivot.</td></tr>
+<tr class="ph"><td colspan="3">Phase 1 — the search: find a failure that grows with capability</td></tr>
+<tr><td>Novelty hunt&nbsp;#1<br>(32 agents)</td><td>What failures actually need intelligence to happen?</td><td class="res">Three candidates that require capability (deception, memory, hiding ability).</td></tr>
+<tr><td>Frontier-weakness hunt<br>(45 agents)</td><td>Which of those is novel and cheap to test?</td><td class="res">Three finalists: metamemory, provenance collapse, audit-vs-private.</td></tr>
+<tr class="ph"><td colspan="3">Phase 2 — the gate: cheap tests on DeepSeek before committing</td></tr>
+<tr><td>Alignment-faking<br>(alignfake)</td><td>Does the agent hide things when it thinks it is audited?</td><td class="res">No sign of hiding (the run also crashed mid-way). Set aside.</td></tr>
+<tr><td>Audit-vs-private<br>(auditpriv)</td><td>Does it write different memory when watched vs. private?</td><td class="res">No difference at any size. <b>Killed.</b></td></tr>
+<tr><td>Metamemory<br>(metamem)</td><td>Is it over-confident about its own memory?</td><td class="res">Test was too easy (everything scored perfect). Inconclusive.</td></tr>
+<tr><td>Provenance collapse<br>(provcollapse)</td><td>Does it write guesses as facts?</td><td class="res"><b>Yes — about 1 in 5 claims</b>, on both DeepSeek models.</td></tr>
+<tr><td>…across sizes<br>(wide-band)</td><td>Does that grow from small to large models?</td><td class="res"><b>Yes: 17B 5.6% → 70B 16% → frontier ~22%.</b> This became the headline.</td></tr>
+<tr class="ph"><td colspan="3">Phase 3 — the full study</td></tr>
+<tr><td>Full pilot<br>(provfull)</td><td>Does the law hold at scale, across model families?</td><td class="res">7 models, 30 conversations, 3 ambiguity levels → 7% to 40%, p&nbsp;≤&nbsp;0.0002.</td></tr>
+<tr><td>Frontier models<br>(provfront)</td><td>Does it hold on GPT-5 and Mistral too?</td><td class="res">Yes — 10 models, 5 companies; GPT-5 and V4-pro both ~30%.</td></tr>
+<tr><td>Judge check<br>(judge-val)</td><td>Is the grader trustworthy?</td><td class="res">Two outside graders agree (κ&nbsp;0.63–0.68).</td></tr>
+<tr><td>The fix<br>(mitig)</td><td>Does a disciplined prompt reduce it?</td><td class="res">Yes — down 60–97% (p&nbsp;≤&nbsp;0.0034).</td></tr>
+<tr><td>Fix check<br>(recall)</td><td>Does the fix also throw away real facts?</td><td class="res">No — real facts kept within 3 points.</td></tr>
+<tr><td>Novelty<br>(deep-research)</td><td>Has anyone published this before?</td><td class="res"><b>No — unique</b> (104 search agents, ~190 papers).</td></tr>
+</table>
+</div><figcaption><b>The full log.</b> Every experiment, in order. We also ran a few smaller exploratory probes (sycophancy, silent disagreement, decorative retrieval) that we set aside. The whole effort cost about <b>$0.30</b> in paid API calls — nearly everything ran on free model tiers.</figcaption></figure>
 
 <!-- THE PAPER -->
 <div class="col"><h2>The paper</h2>
@@ -384,28 +425,60 @@
 <figure class="wide" style="margin-top:8px"><div class="aclpaper">
   <div class="pt">Inference as Fact: Capability-Scaled Provenance Collapse in Self-Authored Agent Memory</div>
   <div class="pa">VelaOps Research · <span class="aff">working draft · target ACL 2027 (main)</span></div>
-  <div class="abs"><b>Abstract.</b> LLM agents increasingly maintain their own persistent natural-language memory. We identify and measure a write-time failure we call <i>provenance collapse</i>: the agent records unsupported inferences as flat declarative facts the user never stated — a commission error, distinct from the omission/recall failures existing benchmarks measure. Across 30 controlled sessions and 10 models from 5 vendors, collapse scales with capability: a small base model (Llama-4-17B) collapses on 7.1% of claims, while every larger, frontier, or reasoning model — including GPT-5 and DeepSeek-V4-pro — collapses on 22–40% (all Fisher one-sided p ≤ 0.0003). It persists at the frontier and grows with input ambiguity. The metric is validated by cross-family judge agreement (κ = 0.63–0.68). A provenance-disciplined prompt reduces collapse 60–97% (McNemar p ≤ 0.0034) while preserving stated-fact recall.</div>
+  <div class="abs"><b>Abstract.</b> Large language model (LLM) agents increasingly maintain their own persistent natural-language memory: notes the model writes to itself and re-reads across sessions. We identify and measure a write-time failure we call <i>provenance collapse</i>: the agent records unsupported inferences as flat declarative facts the user never stated. This is a <i>commission</i> error — fabricating content — and is distinct from the omission and recall failures that existing memory benchmarks measure. Across 30 controlled sessions and 10 models from 5 vendors, provenance collapse scales with model capability: a small base model (Llama-4-17B) collapses on 7.1% of self-authored claims, whereas every larger, frontier, or reasoning model — including GPT-5 and DeepSeek-V4-pro — collapses on 22–40% (all Fisher one-sided p ≤ 0.0003). The effect is a capability threshold that persists at the frontier and grows with input ambiguity. We validate the metric with cross-family LLM-judge agreement (Cohen's κ = 0.63–0.68). Finally, the failure is largely fixable at the prompt level: a provenance-disciplined consolidation instruction reduces collapse by 60–97% (McNemar p ≤ 0.0034) while preserving stated-fact recall. To our knowledge this is the first LLM-agent memory failure shown to intensify with capability rather than diminish.</div>
   <div class="aclcols">
     <h5><span class="s">1</span>Introduction</h5>
-    <p>Persistent memory is now standard agent infrastructure (Park et al., 2023; Packer et al., 2023). The implicit assumption is that what the agent writes is what it was told. We show this fails systematically, and worse in more capable models (<span class="fr">Figure 1</span>). Contributions: (i) the phenomenon and a validated metric; (ii) a capability-scaling law across 10 models and 5 vendors; (iii) a prompt-level fix.</p>
+    <p>Conversational assistants increasingly persist state across sessions by writing their own long-term memory — summaries, profiles, and notes that the model authors, re-reads, and rewrites over time (Park et al., UIST 2023; Packer et al., 2023; Zhong et al., AAAI 2024). This memory then conditions all later behaviour, so its faithfulness is a safety property of the system, not a cosmetic one.</p>
+    <p>The implicit assumption behind every such system is that the agent records <i>what it was told</i>. We show this assumption fails systematically. When consolidating an under-specified human message, a capable model does what it is trained to do — infer, generalize, and fill gaps — and writes the resulting inference into memory as an unqualified fact the user never stated (<span class="fr">Figure 1</span>). We term this <i>provenance collapse</i>: the boundary between stated content and inferred content collapses inside the agent's own notes.</p>
+    <p>Our contributions are: (i) we define provenance collapse as a commission failure and give a validated claim-level metric for it (§3); (ii) we establish a capability-scaling law — collapse rises from 7% in a small base model to 22–40% across nine larger models from five vendors, and persists at the frontier (§5); (iii) we show a prompt-level mitigation that removes 60–97% of collapse without losing stated facts (§6). Unlike most memory failures, this one gets <i>worse</i> as models improve, which makes it a property of the frontier rather than a transient limitation.</p>
+
     <h5><span class="s">2</span>Related Work</h5>
-    <p><b>Memory.</b> Benchmarks (LoCoMo, Maharana et al., 2024; LongMemEval, Wu et al., 2025; MemoryAgentBench, 2025) test recall, not faithful writing; PrefEval (2025) tests following stated preferences. MemIR (Jin et al., 2026) fixes “provenance-role collapse” without measuring a rate or scaling. <b>Faithfulness.</b> Studied for summaries (Maynez et al., 2020) and broadly (Ji et al., 2023; Huang et al., 2023), at reply level, not durable memory; CoT unfaithfulness (Turpin et al., 2023) and sycophancy (Sharma et al., 2024) likewise. <b>Capability-driven failure.</b> Inverse scaling (McKenzie et al., 2023), model-written evals (Perez et al., 2022), TruthfulQA (Lin et al., 2022) show larger-worse on prompted QA. Ours is, to our knowledge, the first such failure measured in self-authored memory across capability and vendors.</p>
-    <h5><span class="s">3</span>Method</h5>
-    <p>30 sessions at three ambiguity levels; each model writes memory; a held-out judge from a different family (LLM-as-judge, Zheng et al., 2023) labels each claim entailed / unsupported / contradicted (<span class="fr">Figure 3</span>). Collapse = unsupported-and-unhedged ÷ total claims. Controls: ≥30 claims/cell, paired tests, prompt-paraphrase arm, cross-family judge (κ 0.63–0.68).</p>
-    <h5><span class="s">4</span>Results</h5>
-    <p>Collapse rises 7.1% → 22–40% across nine larger models, every contrast p ≤ 0.0003 (<span class="fr">Table 1</span>, <span class="fr">Figure 4</span>); persists at the frontier (GPT-5 29.8%, V4-pro 30.1%); grows with ambiguity (<span class="fr">Figure 5</span>; Qwen3-32B 8.9%→44.1%→55.9%).</p>
-    <table class="acltbl"><tr><th>model</th><th>vendor</th><th>collapse</th></tr>
-      <tr><td>Llama-4 17B</td><td>Meta</td><td>7.1%</td></tr><tr><td>GPT-5-mini</td><td>OpenAI</td><td>22.4%</td></tr>
-      <tr><td>Mistral Large 3</td><td>Mistral</td><td>24.3%</td></tr><tr><td>DeepSeek V4-flash</td><td>DeepSeek</td><td>25.5%</td></tr>
-      <tr><td>GPT-5</td><td>OpenAI</td><td>29.8%</td></tr><tr><td>DeepSeek V4-pro</td><td>DeepSeek</td><td>30.1%</td></tr>
-      <tr><td>Qwen3-32B</td><td>Qwen</td><td>39.8%</td></tr></table>
-    <p style="font-size:10px;color:#777">Table 1: abbreviated; GLM-4.7 23.3%, gpt-oss-120B 23.9%, Llama-3.3-70B 23.9% omitted for space.</p>
-    <h5><span class="s">5</span>Mitigation</h5>
-    <p>A provenance-disciplined prompt cuts collapse 60–97% (Qwen3-32B 36.1→1.0%, Llama-3.3-70B 24.7→4.7%, GPT-5-mini 16.5→6.5%; McNemar p ≤ 0.0034; <span class="fr">Figure 6</span>). Stated-fact recall holds within 3 points (<span class="fr">Figure 7</span>), ruling out a “wrote-less” confound.</p>
-    <h5><span class="s">6</span>Limitations &amp; Conclusion</h5>
-    <p>Magnitude is prompt-sensitive; the capability ordering is robust but within-family steps are not individually significant. Labels are judge-based (human validation in progress); sessions are synthetic. Still, provenance collapse is, to our knowledge, the first agent-memory failure shown to intensify with capability rather than fade — and it is substantially fixable with one prompt.</p>
+    <p><b>Agent memory and benchmarks.</b> Architectures that give agents long-term memory are now widespread (Park et al., UIST 2023; Packer et al., 2023; Zhong et al., AAAI 2024). The benchmarks built to evaluate them — LoCoMo (Maharana et al., ACL 2024), LongMemEval (Wu et al., ICLR 2025), MemoryAgentBench (Hu et al., 2025) — measure whether agents <i>recall</i> stated information, not whether what they <i>write</i> is faithful to the source. PrefEval (ICLR 2025) tests following stated user preferences, the converse of inventing unstated ones. Concurrent work, MemIR (Jin et al., 2026), names “provenance-role collapse” and proposes a typed-memory architecture to prevent it, but reports no baseline rate and no capability analysis; it motivates our measurement study rather than overlapping it.</p>
+    <p><b>Faithfulness and hallucination.</b> Unfaithful generation is well studied for summarization (Maynez et al., ACL 2020) and surveyed broadly (Ji et al., ACM Computing Surveys 2023; Huang et al., ACM TOIS 2025), but at the level of a single reply, not a model's persistent self-authored memory. Chain-of-thought unfaithfulness (Turpin et al., NeurIPS 2023) and the truthfulness gap measured by TruthfulQA (Lin et al., ACL 2022) likewise concern single outputs.</p>
+    <p><b>Failures that scale with capability.</b> A small literature documents larger-is-worse behaviour: inverse scaling on certain tasks (McKenzie et al., TMLR 2023), and model-written evaluations showing sycophancy and inverse-scaling-under-RLHF that grow with size (Perez et al., Findings of ACL 2023; Sharma et al., ICLR 2024). These concern prompted question-answering and reply-level behaviour. To our knowledge, no prior work measures a commission failure in <i>self-authored persistent memory</i> as a function of capability across model families.</p>
+    <p><b>Evaluation methodology.</b> We adopt an LLM-as-judge protocol (Zheng et al., NeurIPS 2023) and address its known circularity risk through cross-family judges and inter-judge agreement (§5.4).</p>
+
+    <h5><span class="s">3</span>Provenance Collapse: Definition</h5>
+    <p>Let a session transcript <i>T</i> be consolidated by an agent into memory notes <i>N</i>. We decompose <i>N</i> into atomic claims and label each claim against <i>T</i> as <b>entailed</b> (stated or unambiguously implied), <b>unsupported</b> (an inference, generalization, or embellishment not present in <i>T</i>), or <b>contradicted</b>. A claim is <i>hedged</i> if it carries an explicit uncertainty marker.</p>
+    <p>A claim is a <b>collapse</b> when it is unsupported <i>and</i> unhedged — an inference asserted as flat fact. The model's <b>collapse rate</b> is the number of collapsed claims divided by total claims. This isolates <i>commission</i> (inventing content), as opposed to <i>omission</i> (dropping content), which existing benchmarks already target. Pure task restatements (“remind me to X”) are excluded.</p>
+
+    <h5><span class="s">4</span>Experimental Setup</h5>
+    <p><b>Sessions.</b> We construct 30 transcripts at three ambiguity levels (10 each): <i>low</i> (facts stated outright), <i>medium</i> (plausible gaps that invite inference), and <i>high</i> (vague, emotional input with strong pull to embellish). Ambiguity is the lever that should drive gap-filling.</p>
+    <p><b>Models.</b> Ten models spanning five vendors and a wide capability range: Meta Llama-4-17B and Llama-3.3-70B; Qwen3-32B; OpenAI gpt-oss-120B, GPT-5-mini, GPT-5; Zhipu GLM-4.7; DeepSeek V4-flash and V4-pro; Mistral Large 3. Each model consolidates all 30 sessions into memory (<span class="fr">Figure 3</span>).</p>
+    <p><b>Judging.</b> A held-out judge from a <i>different model family</i> than the agent decomposes and labels every claim, so no model grades its own output. <b>Controls.</b> ≥30 claims per condition (avoiding small-sample quantization); paired tests with raw counts; a second consolidation-prompt phrasing to test wording-sensitivity; Wilson 95% intervals; Fisher one-sided tests for capability contrasts and McNemar for paired mitigation contrasts.</p>
+
+    <h5><span class="s">5</span>Results</h5>
+    <p><b>5.1 The capability-scaling law.</b> Collapse rises from 7.1% (Llama-4-17B) to 22–40% across the nine larger/frontier/reasoning models, every contrast significant at Fisher one-sided p ≤ 0.0003 (<span class="fr">Table 1</span>, <span class="fr">Figure 4</span>). It holds across all five vendors and <i>persists at the frontier</i>: GPT-5 (29.8%) and DeepSeek-V4-pro (30.1%) are among the worst.</p>
+    <table class="acltbl"><tr><th>model</th><th>vendor</th><th>collapse</th><th>vs 17B</th></tr>
+      <tr><td>Llama-4 17B</td><td>Meta</td><td>7.1%</td><td>—</td></tr>
+      <tr><td>GPT-5-mini</td><td>OpenAI</td><td>22.4%</td><td>.0003</td></tr>
+      <tr><td>GLM-4.7</td><td>Zhipu</td><td>23.3%</td><td>.0001</td></tr>
+      <tr><td>Llama-3.3 70B</td><td>Meta</td><td>23.9%</td><td>.0001</td></tr>
+      <tr><td>gpt-oss 120B</td><td>OpenAI</td><td>23.9%</td><td>.0002</td></tr>
+      <tr><td>Mistral Large 3</td><td>Mistral</td><td>24.3%</td><td>&lt;.0001</td></tr>
+      <tr><td>V4-flash</td><td>DeepSeek</td><td>25.5%</td><td>&lt;.0001</td></tr>
+      <tr><td>GPT-5</td><td>OpenAI</td><td>29.8%</td><td>&lt;.0001</td></tr>
+      <tr><td>V4-pro</td><td>DeepSeek</td><td>30.1%</td><td>&lt;.0001</td></tr>
+      <tr><td>Qwen3-32B</td><td>Qwen</td><td>39.8%</td><td>&lt;.0001</td></tr></table>
+    <p style="font-size:10px;color:#777">Table 1: Collapse rate (v1 prompt) and Fisher one-sided p vs. the 17B anchor.</p>
+    <p><b>5.2 Ambiguity gradient.</b> Within every model, collapse is near-zero on low-ambiguity input and rises sharply on vague input (<span class="fr">Figure 5</span>): Qwen3-32B goes 8.9% → 44.1% → 55.9% from low to high. The effect tracks how much there is to infer — the signature of gap-filling.</p>
+    <p><b>5.3 Reasoning vs. size (hypothesis).</b> The single worst model is a reasoning model (Qwen3-32B, 39.8%), but two other reasoning models sit with the non-reasoning frontier (gpt-oss-120B 23.9%, GLM-4.7 23.3%). We therefore present “reasoning amplifies collapse” as a hypothesis, not a conclusion.</p>
+    <p><b>5.4 Metric validity.</b> Re-labelling a random 40-claim sample with two independent cross-family judges gives raw agreement 87.5% and Cohen's κ = 0.63 and 0.68 (both “substantial”); agreement with a 3-judge majority is κ = 0.87. Human gold labels are in progress.</p>
+    <p><b>5.5 Prompt sensitivity.</b> Absolute rates shift with consolidation wording (gpt-oss-120B falls to 2.4% under one phrasing), but the capability ordering is preserved; we report per-prompt and treat suppressibility as a mitigation cue (§6).</p>
+
+    <h5><span class="s">6</span>Mitigation</h5>
+    <p>A single instruction at consolidation — <i>record only what was stated; mark any inference as inferred; omit when unsure</i> — sharply reduces collapse: Qwen3-32B 36.1→1.0%, Llama-3.3-70B 24.7→4.7%, GPT-5-mini 16.5→6.5% (paired, McNemar p ≤ 0.0034; <span class="fr">Figure 6</span>). To rule out a “wrote-less” confound, we measure stated-fact recall against a gold per-transcript fact set: recall stays within ~3 points of baseline (every paired-difference CI includes zero; <span class="fr">Figure 7</span>). The fix removes inventions, not facts.</p>
+
+    <h5><span class="s">7</span>Discussion</h5>
+    <p>The mechanism is the model's own helpfulness. In a live reply, inferring beyond the literal input is desirable; written into permanent memory as fact, the same inference becomes corruption that compounds, because every later session reads it as ground truth. This explains why collapse grows with capability — a stronger model infers more — and why it persists at the frontier rather than being trained away. It also clarifies the relationship to MemIR (Jin et al., 2026): they propose an architectural fix for the same phenomenon; we provide the first measurement of its prevalence and capability dependence, plus a lightweight prompt-level alternative. The deployment implication is direct: any agent that writes durable memory should separate stated facts from inferences at write time, by architecture or by prompt.</p>
+
+    <h5><span class="s">8</span>Limitations</h5>
+    <p>Magnitude is prompt-sensitive; we report per-prompt and rely on the (robust) capability ordering. The scaling is a threshold — within-family frontier steps (e.g., flash→pro, gpt5mini→gpt5) are directional but not individually significant. Labels are judge-based and validated by agreement; gold human labels are still being collected. Sessions are controlled and synthetic; naturalistic, long-horizon multi-session deployments are future work.</p>
+
+    <h5><span class="s">9</span>Conclusion</h5>
+    <p>Provenance collapse is a measurable, cross-vendor failure in which capable LLM agents persist their own inferences as user-stated fact, at rates of one-in-four to two-in-five claims, growing with capability and unfixed at the frontier — yet largely correctable with a single prompt. To our knowledge it is the first agent-memory failure shown to intensify with capability rather than fade. We release the auditing harness, the 30-session suite, and the 10-model measurements.</p>
   </div>
-</div><figcaption><b>Full draft</b> available as PAPER_DRAFT.md in the project repository.</figcaption></figure>
+</div><figcaption><b>The 8-page working draft</b> in its own format; the full LaTeX source is PAPER_DRAFT.md in the project repository. Citations carry venues (ACL, NeurIPS, ICLR, AAAI, UIST, TMLR, ACM CSUR/TOIS); see References above.</figcaption></figure>
 
 <!-- LIMITATIONS -->
 <div class="col">
@@ -429,28 +502,28 @@
   <div class="refs">
     <div class="refgroup"><h4>Agent memory &amp; benchmarks</h4>
       <div class="ref">Park, O'Brien, Cai, Morris, Liang, Bernstein. Generative Agents: Interactive Simulacra of Human Behavior. <span class="v">UIST 2023.</span> <a href="https://arxiv.org/abs/2304.03442">arXiv:2304.03442</a></div>
-      <div class="ref">Packer et al. MemGPT: Towards LLMs as Operating Systems. <span class="v">2023.</span> <a href="https://arxiv.org/abs/2310.08560">arXiv:2310.08560</a></div>
-      <div class="ref">Zhong, Guo, Gao, Ye, Wang. MemoryBank: Enhancing LLMs with Long-Term Memory. <span class="v">2023.</span> <a href="https://arxiv.org/abs/2305.10250">arXiv:2305.10250</a></div>
+      <div class="ref">Packer et al. MemGPT: Towards LLMs as Operating Systems. <span class="v">preprint, 2023.</span> <a href="https://arxiv.org/abs/2310.08560">arXiv:2310.08560</a></div>
+      <div class="ref">Zhong, Guo, Gao, Ye, Wang. MemoryBank: Enhancing LLMs with Long-Term Memory. <span class="v">AAAI 2024.</span> <a href="https://arxiv.org/abs/2305.10250">arXiv:2305.10250</a></div>
       <div class="ref">Maharana et al. Evaluating Very Long-Term Conversational Memory of LLM Agents (LoCoMo). <span class="v">ACL 2024.</span> <a href="https://arxiv.org/abs/2402.17753">arXiv:2402.17753</a></div>
       <div class="ref">Wu et al. LongMemEval: Benchmarking Long-Term Interactive Memory. <span class="v">ICLR 2025.</span> <a href="https://arxiv.org/abs/2410.10813">arXiv:2410.10813</a></div>
-      <div class="ref">Hu et al. MemoryAgentBench. <span class="v">2025.</span> <a href="https://arxiv.org/abs/2507.05257">arXiv:2507.05257</a></div>
-      <div class="ref">Zhang et al. PrefEval. <span class="v">2025.</span> <a href="https://arxiv.org/abs/2502.09597">arXiv:2502.09597</a></div>
+      <div class="ref">Hu et al. MemoryAgentBench: Evaluating Memory in LLM Agents. <span class="v">preprint, 2025.</span> <a href="https://arxiv.org/abs/2507.05257">arXiv:2507.05257</a></div>
+      <div class="ref">Do LLMs Recognize Your Preferences? Evaluating Personalized Preference Following (PrefEval). <span class="v">ICLR 2025 (Oral).</span> <a href="https://arxiv.org/abs/2502.09597">arXiv:2502.09597</a></div>
       <div class="ref">Jin et al. Mitigating Provenance-Role Collapse via Typed Memory (MemIR). <span class="v">2026, concurrent.</span> <a href="https://arxiv.org/abs/2605.25869">arXiv:2605.25869</a></div>
     </div>
     <div class="refgroup"><h4>Faithfulness &amp; hallucination</h4>
       <div class="ref">Maynez, Narayan, Bohnet, McDonald. On Faithfulness and Factuality in Abstractive Summarization. <span class="v">ACL 2020.</span> <a href="https://arxiv.org/abs/2005.00661">arXiv:2005.00661</a></div>
       <div class="ref">Ji et al. Survey of Hallucination in Natural Language Generation. <span class="v">ACM Computing Surveys, 2023.</span> <a href="https://arxiv.org/abs/2202.03629">arXiv:2202.03629</a></div>
-      <div class="ref">Huang et al. A Survey on Hallucination in Large Language Models. <span class="v">2023.</span> <a href="https://arxiv.org/abs/2311.05232">arXiv:2311.05232</a></div>
+      <div class="ref">Huang et al. A Survey on Hallucination in Large Language Models. <span class="v">ACM TOIS 2025.</span> <a href="https://arxiv.org/abs/2311.05232">arXiv:2311.05232</a></div>
       <div class="ref">Turpin, Michael, Perez, Bowman. Language Models Don't Always Say What They Think. <span class="v">NeurIPS 2023.</span> <a href="https://arxiv.org/abs/2305.04388">arXiv:2305.04388</a></div>
       <div class="ref">Lin, Hilton, Evans. TruthfulQA. <span class="v">ACL 2022.</span> <a href="https://arxiv.org/abs/2109.07958">arXiv:2109.07958</a></div>
     </div>
     <div class="refgroup"><h4>Failures that grow with capability</h4>
       <div class="ref">McKenzie et al. Inverse Scaling: When Bigger Isn't Better. <span class="v">TMLR 2023.</span> <a href="https://arxiv.org/abs/2306.09479">arXiv:2306.09479</a></div>
-      <div class="ref">Perez et al. Discovering Language Model Behaviors with Model-Written Evaluations. <span class="v">2022.</span> <a href="https://arxiv.org/abs/2212.09251">arXiv:2212.09251</a></div>
+      <div class="ref">Perez et al. Discovering Language Model Behaviors with Model-Written Evaluations. <span class="v">Findings of ACL 2023.</span> <a href="https://arxiv.org/abs/2212.09251">arXiv:2212.09251</a></div>
       <div class="ref">Sharma et al. Towards Understanding Sycophancy in Language Models. <span class="v">ICLR 2024.</span> <a href="https://arxiv.org/abs/2310.13548">arXiv:2310.13548</a></div>
-      <div class="ref">Greenblatt et al. Alignment Faking in Large Language Models. <span class="v">2024.</span> <a href="https://arxiv.org/abs/2412.14093">arXiv:2412.14093</a></div>
-      <div class="ref">Meinke et al. Frontier Models are Capable of In-Context Scheming. <span class="v">Apollo, 2024.</span> <a href="https://arxiv.org/abs/2412.04984">arXiv:2412.04984</a></div>
-      <div class="ref">Laine et al. Situational Awareness Dataset (SAD). <span class="v">2024.</span> <a href="https://arxiv.org/abs/2407.04694">arXiv:2407.04694</a></div>
+      <div class="ref">Greenblatt et al. Alignment Faking in Large Language Models. <span class="v">preprint (Anthropic), 2024.</span> <a href="https://arxiv.org/abs/2412.14093">arXiv:2412.14093</a></div>
+      <div class="ref">Meinke et al. Frontier Models are Capable of In-Context Scheming. <span class="v">preprint (Apollo Research), 2024.</span> <a href="https://arxiv.org/abs/2412.04984">arXiv:2412.04984</a></div>
+      <div class="ref">Laine et al. Situational Awareness Dataset (SAD). <span class="v">preprint, 2024.</span> <a href="https://arxiv.org/abs/2407.04694">arXiv:2407.04694</a></div>
     </div>
     <div class="refgroup"><h4>Evaluation methodology</h4>
       <div class="ref">Zheng et al. Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena. <span class="v">NeurIPS 2023 (D&amp;B).</span> <a href="https://arxiv.org/abs/2306.05685">arXiv:2306.05685</a></div>
