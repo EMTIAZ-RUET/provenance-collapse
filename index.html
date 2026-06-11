@@ -4,10 +4,10 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Inference as Fact — Provenance Collapse in Self-Authored Agent Memory</title>
-<meta name="description" content="A capable LLM agent writes its own inferences into memory as if they were facts. We measure this 'provenance collapse' across 10 models and 5 vendors — and show it gets worse with capability." />
+<meta name="description" content="The full story and study: capable LLM agents write their own inferences into memory as fact — a failure that worsens with capability. Across 10 models and 5 vendors." />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600;9..144,900&family=Spectral:ital,wght@0,300;0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600;9..144,900&family=Spectral:ital,wght@0,300;0,400;0,500;0,600;1,400;1,500&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>
   :root{
@@ -17,600 +17,633 @@
     --muted:#929cb0; --muted2:#6b7384;
     --line:#262c39;
     --teal:#34c2a6; --amber:#f4a32a; --coral:#ff5a40; --coraldim:#c8412f;
-    --hot:#ff5a40; --cool:#34c2a6;
     --serif:'Spectral',Georgia,serif;
     --disp:'Fraunces',Georgia,serif;
     --mono:'IBM Plex Mono',ui-monospace,monospace;
-    --maxw:1080px;
+    --maxw:1080px; --narrow:740px;
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html{scroll-behavior:smooth}
-  body{
-    background:var(--ink); color:#dce2ee; font-family:var(--serif);
-    font-size:18px; line-height:1.7; -webkit-font-smoothing:antialiased;
-    overflow-x:hidden;
-  }
+  body{background:var(--ink); color:#dce2ee; font-family:var(--serif); font-size:18px; line-height:1.75; -webkit-font-smoothing:antialiased; overflow-x:hidden}
   ::selection{background:var(--coral); color:#fff}
   a{color:var(--teal); text-decoration:none; border-bottom:1px solid rgba(52,194,166,.3)}
   a:hover{border-color:var(--teal)}
-
-  /* grain + mesh atmosphere */
-  body::before{
-    content:""; position:fixed; inset:0; z-index:0; pointer-events:none; opacity:.5;
-    background:
-      radial-gradient(60vw 50vh at 80% -10%, rgba(255,90,64,.10), transparent 60%),
-      radial-gradient(50vw 50vh at -10% 30%, rgba(52,194,166,.08), transparent 55%),
-      radial-gradient(50vw 60vh at 60% 110%, rgba(244,163,42,.06), transparent 60%);
-  }
-  body::after{
-    content:""; position:fixed; inset:0; z-index:1; pointer-events:none; opacity:.035;
-    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  }
+  body::before{content:""; position:fixed; inset:0; z-index:0; pointer-events:none; opacity:.5;
+    background:radial-gradient(60vw 50vh at 80% -10%, rgba(255,90,64,.10), transparent 60%),radial-gradient(50vw 50vh at -10% 25%, rgba(52,194,166,.08), transparent 55%),radial-gradient(50vw 60vh at 60% 115%, rgba(244,163,42,.06), transparent 60%)}
+  body::after{content:""; position:fixed; inset:0; z-index:1; pointer-events:none; opacity:.035;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
   .wrap{position:relative; z-index:2; max-width:var(--maxw); margin:0 auto; padding:0 28px}
-
-  /* progress bar */
-  #prog{position:fixed; top:0; left:0; height:3px; width:0; z-index:50;
-    background:linear-gradient(90deg,var(--teal),var(--amber),var(--coral))}
-
-  /* top label */
-  .topbar{position:fixed; top:0; left:0; right:0; z-index:40; display:flex; justify-content:space-between;
-    align-items:center; padding:14px 28px; font-family:var(--mono); font-size:12px; letter-spacing:.12em;
-    text-transform:uppercase; color:var(--muted2); mix-blend-mode:difference}
+  .narrow{max-width:var(--narrow)}
+  #prog{position:fixed; top:0; left:0; height:3px; width:0; z-index:50; background:linear-gradient(90deg,var(--teal),var(--amber),var(--coral))}
+  .topbar{position:fixed; top:0; left:0; right:0; z-index:40; display:flex; justify-content:space-between; align-items:center; padding:14px 28px; font-family:var(--mono); font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted2); mix-blend-mode:difference}
   .topbar b{color:#fff; font-weight:500}
 
-  /* ---------- HERO ---------- */
-  .hero{min-height:100vh; display:flex; flex-direction:column; justify-content:center;
-    padding:120px 0 80px; position:relative}
-  .kicker{font-family:var(--mono); font-size:13px; letter-spacing:.34em; text-transform:uppercase;
-    color:var(--coral); margin-bottom:30px}
-  .hero h1{font-family:var(--disp); font-weight:300; font-size:clamp(46px,9vw,116px);
-    line-height:.97; letter-spacing:-.02em; color:#fff}
+  /* HERO */
+  .hero{min-height:100vh; display:flex; flex-direction:column; justify-content:center; padding:120px 0 80px; position:relative}
+  .kicker{font-family:var(--mono); font-size:13px; letter-spacing:.34em; text-transform:uppercase; color:var(--coral); margin-bottom:30px}
+  .hero h1{font-family:var(--disp); font-weight:300; font-size:clamp(46px,9vw,118px); line-height:.96; letter-spacing:-.02em; color:#fff}
   .hero h1 em{font-style:italic; font-weight:500; color:var(--amber)}
   .hero .sub{font-size:clamp(19px,2.4vw,26px); color:#c2cad9; max-width:760px; margin-top:34px; font-weight:300}
   .hero .sub b{color:#fff; font-weight:500}
-  .heronums{display:flex; gap:48px; margin-top:56px; flex-wrap:wrap}
-  .heronums .n{font-family:var(--disp); font-size:clamp(40px,6vw,66px); font-weight:500; line-height:1;
-    background:linear-gradient(180deg,#fff,#9fb0c6); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent}
-  .heronums .l{font-family:var(--mono); font-size:12.5px; letter-spacing:.08em; color:var(--muted); margin-top:10px; text-transform:uppercase}
+  .heronums{display:flex; gap:48px; margin-top:54px; flex-wrap:wrap}
+  .heronums .n{font-family:var(--disp); font-size:clamp(40px,6vw,64px); font-weight:500; line-height:1; background:linear-gradient(180deg,#fff,#9fb0c6); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent}
   .heronums .n.hot{background:linear-gradient(180deg,#ff8a72,#ff3b1d); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent}
-  .scrollcue{position:absolute; bottom:34px; left:50%; transform:translateX(-50%); font-family:var(--mono);
-    font-size:11px; letter-spacing:.3em; color:var(--muted2); text-transform:uppercase; animation:bob 2.4s ease-in-out infinite}
+  .heronums .l{font-family:var(--mono); font-size:12px; letter-spacing:.06em; color:var(--muted); margin-top:10px; text-transform:uppercase}
+  .authors{margin-top:46px; font-family:var(--mono); font-size:12.5px; color:var(--muted2); letter-spacing:.05em}
+  .scrollcue{position:absolute; bottom:32px; left:50%; transform:translateX(-50%); font-family:var(--mono); font-size:11px; letter-spacing:.3em; color:var(--muted2); text-transform:uppercase; animation:bob 2.4s ease-in-out infinite}
   @keyframes bob{0%,100%{transform:translate(-50%,0);opacity:.5}50%{transform:translate(-50%,8px);opacity:1}}
 
-  /* ---------- SECTIONS ---------- */
-  section{padding:96px 0; position:relative}
-  .sec-tag{font-family:var(--mono); font-size:12px; letter-spacing:.26em; text-transform:uppercase;
-    color:var(--teal); margin-bottom:20px; display:flex; align-items:center; gap:12px}
+  /* part divider */
+  .part{padding:70px 0 10px}
+  .part .pno{font-family:var(--mono); font-size:13px; letter-spacing:.3em; color:var(--coral); text-transform:uppercase}
+  .part h2.parttitle{font-family:var(--disp); font-weight:300; font-size:clamp(34px,6vw,72px); color:#fff; line-height:1; margin-top:14px; letter-spacing:-.02em}
+  .part h2.parttitle em{font-style:italic; color:var(--amber); font-weight:500}
+
+  section{padding:70px 0; position:relative}
+  .sec-tag{font-family:var(--mono); font-size:12px; letter-spacing:.26em; text-transform:uppercase; color:var(--teal); margin-bottom:20px; display:flex; align-items:center; gap:12px}
   .sec-tag::before{content:""; width:34px; height:1px; background:var(--teal); opacity:.6}
-  h2{font-family:var(--disp); font-weight:400; font-size:clamp(32px,5vw,56px); line-height:1.04;
-    letter-spacing:-.015em; color:#fff; margin-bottom:26px}
+  h2{font-family:var(--disp); font-weight:400; font-size:clamp(30px,5vw,52px); line-height:1.05; letter-spacing:-.015em; color:#fff; margin-bottom:24px}
   h2 em{font-style:italic; color:var(--amber)}
-  h3{font-family:var(--disp); font-weight:500; font-size:26px; color:#fff; margin:38px 0 14px; letter-spacing:-.01em}
-  p.lead{font-size:21px; color:#cdd5e3; max-width:760px}
-  p{max-width:760px; color:#bcc5d6; margin-bottom:18px}
+  h3{font-family:var(--disp); font-weight:500; font-size:25px; color:#fff; margin:36px 0 12px; letter-spacing:-.01em}
+  p.lead{font-size:21px; color:#cdd5e3; max-width:var(--narrow)}
+  p{max-width:var(--narrow); color:#bcc5d6; margin-bottom:18px}
   p b{color:#fff; font-weight:500}
+  .drop::first-letter{font-family:var(--disp); font-size:62px; line-height:.8; float:left; padding:6px 12px 0 0; color:var(--amber); font-weight:500}
   .hl-bad{color:var(--coral); font-weight:500}
   .hl-good{color:var(--teal); font-weight:500}
   .mono{font-family:var(--mono)}
+  .aside{border-left:2px solid var(--line); padding:2px 0 2px 22px; margin:24px 0; color:#9aa3b4; font-size:16.5px; max-width:var(--narrow)}
+  .aside b{color:#cbd3e2}
 
-  /* paper (light) bands for editorial rhythm */
-  .paper{background:var(--cream); color:var(--paper-ink)}
-  .paper h2{color:#16120b}
-  .paper h2 em{color:var(--coraldim)}
-  .paper h3{color:#16120b}
-  .paper p{color:#3c352a}
-  .paper p b{color:#16120b}
-  .paper .sec-tag{color:#9a6a2a}
-  .paper .sec-tag::before{background:#9a6a2a}
-  .paper .card{background:#fff; border-color:#ddd0ba}
-  .paper .muted{color:#7a7060}
+  .paper-band{background:var(--cream); color:var(--paper-ink)}
+  .paper-band h2{color:#16120b} .paper-band h2 em{color:var(--coraldim)} .paper-band h3{color:#16120b}
+  .paper-band p{color:#3c352a} .paper-band p b{color:#16120b} .paper-band p.lead{color:#2a241b}
+  .paper-band .sec-tag{color:#9a6a2a} .paper-band .sec-tag::before{background:#9a6a2a}
+  .paper-band .card{background:#fff; border-color:#ddd0ba} .paper-band .muted{color:#7a7060}
+  .paper-band .aside{border-color:#cbb98f; color:#5a5142} .paper-band .aside b{color:#16120b}
 
-  .reveal{opacity:0; transform:translateY(28px); transition:opacity .9s cubic-bezier(.2,.7,.2,1), transform .9s cubic-bezier(.2,.7,.2,1)}
+  .reveal{opacity:0; transform:translateY(26px); transition:opacity .9s cubic-bezier(.2,.7,.2,1), transform .9s cubic-bezier(.2,.7,.2,1)}
   .reveal.in{opacity:1; transform:none}
-  .reveal.d1{transition-delay:.08s}.reveal.d2{transition-delay:.16s}.reveal.d3{transition-delay:.24s}.reveal.d4{transition-delay:.32s}
+  .reveal.d1{transition-delay:.08s}.reveal.d2{transition-delay:.16s}.reveal.d3{transition-delay:.24s}
 
-  /* cards / grid */
-  .grid{display:grid; gap:18px; margin-top:34px}
+  .grid{display:grid; gap:16px; margin-top:30px}
   .g2{grid-template-columns:repeat(2,1fr)} .g3{grid-template-columns:repeat(3,1fr)} .g4{grid-template-columns:repeat(4,1fr)}
-  .card{background:var(--ink2); border:1px solid var(--line); border-radius:14px; padding:24px}
-  .card .big{font-family:var(--disp); font-size:42px; font-weight:500; color:#fff; line-height:1}
-  .card .lbl{font-family:var(--mono); font-size:11.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin-top:10px}
-  .card .desc{font-size:15px; color:#aab3c4; margin-top:12px}
+  .card{background:var(--ink2); border:1px solid var(--line); border-radius:14px; padding:22px}
+  .card .big{font-family:var(--disp); font-size:40px; font-weight:500; color:#fff; line-height:1}
+  .card .lbl{font-family:var(--mono); font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin-top:10px}
+  .card .desc{font-size:14.5px; color:#aab3c4; margin-top:10px}
+
+  /* FIGURE blocks (publication style) */
+  .figure{margin:40px 0; border-radius:16px; overflow:hidden; border:1px solid var(--line); background:#0a0c11}
+  .paper-band .figure{background:#fbf8f1; border-color:#ddd0ba}
+  .figure .stage{padding:30px 26px 12px}
+  .figure svg{width:100%; height:auto; display:block}
+  .figcap{font-family:var(--serif); font-size:15.5px; color:#aab3c4; padding:14px 26px 22px; border-top:1px solid var(--line); line-height:1.6}
+  .paper-band .figcap{color:#5a5142; border-color:#e7ddca}
+  .figcap b{font-family:var(--mono); font-size:12.5px; letter-spacing:.04em; color:var(--amber); text-transform:uppercase; margin-right:8px}
+  .paper-band .figcap b{color:#9a6a2a}
 
   /* timeline */
-  .timeline{margin-top:44px; border-left:2px solid var(--line); padding-left:0}
-  .tl{position:relative; padding:0 0 36px 34px}
-  .tl::before{content:""; position:absolute; left:-9px; top:4px; width:16px; height:16px; border-radius:50%;
-    background:var(--ink); border:2px solid var(--teal)}
-  .tl.bad::before{border-color:var(--coral)}
-  .tl.good::before{border-color:var(--amber); background:var(--amber)}
+  .timeline{margin-top:38px; border-left:2px solid var(--line)}
+  .tl{position:relative; padding:0 0 34px 32px}
+  .tl::before{content:""; position:absolute; left:-9px; top:5px; width:16px; height:16px; border-radius:50%; background:var(--ink); border:2px solid var(--teal)}
+  .tl.bad::before{border-color:var(--coral)} .tl.good::before{border-color:var(--amber); background:var(--amber)}
+  .paper-band .tl::before{background:var(--cream)}
   .tl .when{font-family:var(--mono); font-size:12px; letter-spacing:.1em; color:var(--muted); text-transform:uppercase}
-  .tl h4{font-family:var(--disp); font-size:23px; font-weight:500; color:#fff; margin:6px 0 8px}
-  .tl p{font-size:16.5px; margin:0; color:#aeb7c8}
+  .paper-band .tl .when{color:#9a6a2a}
+  .tl h4{font-family:var(--disp); font-size:22px; font-weight:500; color:#fff; margin:5px 0 8px}
+  .paper-band .tl h4{color:#16120b}
+  .tl p{font-size:16.5px; margin:0; color:#aeb7c8} .paper-band .tl p{color:#4a4236}
 
-  /* the live demo */
-  .demo{margin-top:40px; display:grid; grid-template-columns:1fr auto 1fr; gap:24px; align-items:center}
+  /* demo */
+  .demo{margin-top:36px; display:grid; grid-template-columns:1fr auto 1fr; gap:22px; align-items:center}
   .demo .panel{background:var(--ink2); border:1px solid var(--line); border-radius:14px; padding:22px; min-height:230px}
   .demo .phead{font-family:var(--mono); font-size:11.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin-bottom:14px; display:flex; align-items:center; gap:8px}
   .demo .dot{width:8px;height:8px;border-radius:50%;display:inline-block}
   .demo .chat{font-size:16px; color:#d6dcea}
   .demo .chat .u{color:var(--teal); font-family:var(--mono); font-size:12px; letter-spacing:.08em}
-  .demo .note{font-size:16px; line-height:1.8; color:#d6dcea; white-space:pre-wrap; min-height:120px}
+  .demo .note{font-size:16px; line-height:1.85; color:#d6dcea; white-space:pre-wrap; min-height:120px}
   .demo .inv{background:rgba(255,90,64,.16); color:#ffb3a4; border-bottom:2px solid var(--coral); padding:1px 3px; border-radius:3px}
-  .demo .tag{display:inline-block; font-family:var(--mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase;
-    color:#fff; background:var(--coral); border-radius:4px; padding:2px 7px; margin-left:6px; vertical-align:middle; opacity:0; transition:opacity .4s}
+  .demo .tag{display:inline-block; font-family:var(--mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:#fff; background:var(--coral); border-radius:4px; padding:2px 7px; margin-left:6px; vertical-align:middle; opacity:0; transition:opacity .4s}
   .demo .tag.show{opacity:1}
-  .arrow{font-family:var(--mono); color:var(--muted); font-size:24px; text-align:center}
+  .arrow{font-family:var(--mono); color:var(--muted); font-size:22px; text-align:center}
   .demo .cap{font-family:var(--mono); font-size:11px; color:var(--muted2); margin-top:12px; letter-spacing:.05em}
-  .replay{margin-top:26px; font-family:var(--mono); font-size:12px; letter-spacing:.14em; text-transform:uppercase;
-    background:transparent; color:var(--amber); border:1px solid var(--amber); border-radius:30px; padding:11px 22px; cursor:pointer; transition:all .25s}
+  .replay{margin-top:24px; font-family:var(--mono); font-size:12px; letter-spacing:.14em; text-transform:uppercase; background:transparent; color:var(--amber); border:1px solid var(--amber); border-radius:30px; padding:11px 22px; cursor:pointer; transition:all .25s}
   .replay:hover{background:var(--amber); color:var(--ink)}
 
-  /* pipeline svg */
-  .pipe{margin-top:40px; width:100%}
-  .pipe text{font-family:var(--mono)}
+  /* animated agent scene keyframes (shared 8s loop) */
+  @keyframes sUser{0%,4%{opacity:0;transform:translateY(6px)}10%,92%{opacity:1;transform:none}100%{opacity:0}}
+  @keyframes sFlow1{0%,12%{opacity:0;stroke-dashoffset:60}20%,92%{opacity:1;stroke-dashoffset:0}100%{opacity:0}}
+  @keyframes sAgent{0%,18%{opacity:.3;transform:scale(.97)}30%{opacity:1;transform:scale(1.03)}40%,92%{opacity:1;transform:scale(1)}100%{opacity:.3}}
+  @keyframes sThought{0%,24%{opacity:0}34%,60%{opacity:1}70%,100%{opacity:0}}
+  @keyframes sFlow2{0%,46%{opacity:0;stroke-dashoffset:60}56%,92%{opacity:1;stroke-dashoffset:0}100%{opacity:0}}
+  @keyframes sLine1{0%,56%{opacity:0}62%,92%{opacity:1}100%{opacity:0}}
+  @keyframes sLine2{0%,63%{opacity:0}69%,92%{opacity:1}100%{opacity:0}}
+  @keyframes sInf{0%,71%{opacity:0;transform:translateX(8px)}80%,92%{opacity:1;transform:none}100%{opacity:0}}
+  @keyframes sWarn{0%,82%{opacity:0;transform:scale(.6)}88%{opacity:1;transform:scale(1.12)}92%{transform:scale(1)}100%{opacity:0}}
+  #scene .uMsg{animation:sUser 8s infinite} #scene .f1{animation:sFlow1 8s infinite}
+  #scene .agent{animation:sAgent 8s infinite; transform-origin:center} #scene .thought{animation:sThought 8s infinite}
+  #scene .f2{animation:sFlow2 8s infinite} #scene .l1{animation:sLine1 8s infinite} #scene .l2{animation:sLine2 8s infinite}
+  #scene .inf{animation:sInf 8s infinite} #scene .warn{animation:sWarn 8s infinite; transform-origin:center}
+  #scene text{font-family:var(--mono)}
 
-  /* chart container */
-  .chartbox{margin-top:36px; background:var(--ink2); border:1px solid var(--line); border-radius:16px; padding:30px 26px 18px}
-  .paper .chartbox{background:#fff; border-color:#ddd0ba}
-  .chartcap{font-family:var(--mono); font-size:12.5px; color:var(--muted); margin-top:16px; letter-spacing:.03em; line-height:1.6}
-  .paper .chartcap{color:#7a7060}
+  .chartbox{margin-top:32px; background:var(--ink2); border:1px solid var(--line); border-radius:16px; padding:28px 24px 16px}
+  .paper-band .chartbox{background:#fff; border-color:#ddd0ba}
+  .chartcap{font-family:var(--mono); font-size:12.5px; color:var(--muted); margin-top:14px; letter-spacing:.02em; line-height:1.6}
+  .paper-band .chartcap{color:#7a7060}
   .chartbox h3{margin-top:0}
-  .legend{display:flex; gap:20px; flex-wrap:wrap; font-family:var(--mono); font-size:12px; color:var(--muted); margin-top:8px}
-  .legend span{display:flex; align-items:center; gap:7px}
-  .legend i{width:13px;height:13px;border-radius:3px;display:inline-block}
+  .legend{display:flex; gap:18px; flex-wrap:wrap; font-family:var(--mono); font-size:12px; color:var(--muted); margin-top:6px}
+  .legend span{display:flex; align-items:center; gap:7px} .legend i{width:13px;height:13px;border-radius:3px;display:inline-block}
 
-  /* stat callouts inline */
-  .pill{display:inline-block; font-family:var(--mono); font-size:13px; padding:3px 10px; border-radius:30px;
-    border:1px solid var(--line); color:#cbd3e2; margin:3px 4px 3px 0}
-  .pill.bad{border-color:rgba(255,90,64,.4); color:#ffa48f}
-  .pill.good{border-color:rgba(52,194,166,.4); color:#7fe6cf}
+  /* results table (paper style) */
+  table.res{width:100%; border-collapse:collapse; margin-top:30px; font-size:15px}
+  table.res th,table.res td{text-align:left; padding:11px 12px; border-bottom:1px solid var(--line)}
+  table.res th{font-family:var(--mono); font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted)}
+  table.res td{color:#cbd3e2} table.res td.m{font-family:var(--mono)}
+  table.res tr td:first-child{color:#fff}
+  .bar{height:9px; border-radius:5px; display:inline-block; vertical-align:middle; margin-right:8px}
 
-  /* related work cards */
   .rw{border-radius:14px; border:1px solid var(--line); padding:22px; background:var(--ink2)}
   .rw .id{font-family:var(--mono); font-size:11.5px; color:var(--teal); letter-spacing:.05em}
   .rw h4{font-family:var(--disp); font-size:20px; color:#fff; font-weight:500; margin:8px 0 10px}
   .rw p{font-size:15px; color:#aab3c4; margin:0}
   .rw .verdict{margin-top:14px; font-family:var(--mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--teal)}
 
-  /* verdict banner */
-  .verdict-banner{margin-top:40px; border:1px solid rgba(52,194,166,.4); border-radius:18px; padding:34px;
-    background:linear-gradient(135deg, rgba(52,194,166,.10), rgba(52,194,166,.02))}
+  .verdict-banner{margin-top:36px; border:1px solid rgba(52,194,166,.4); border-radius:18px; padding:32px; background:linear-gradient(135deg, rgba(52,194,166,.10), rgba(52,194,166,.02))}
   .verdict-banner .v{font-family:var(--disp); font-size:clamp(40px,7vw,72px); font-weight:500; color:var(--teal); line-height:1; letter-spacing:-.02em}
-  .verdict-banner p{margin-top:14px; color:#cdd5e3}
+  .verdict-banner p{margin-top:12px; color:#cdd5e3}
 
-  .limit{border-left:3px solid var(--amber); padding:4px 0 4px 22px; margin:20px 0; max-width:760px}
-  .limit b{color:#fff}
+  .limit{border-left:3px solid var(--amber); padding:4px 0 4px 22px; margin:20px 0; max-width:var(--narrow)}
+  .limit b{color:#fff} .paper-band .limit b{color:#16120b}
 
-  blockquote{font-family:var(--disp); font-style:italic; font-weight:300; font-size:clamp(24px,3.6vw,38px);
-    line-height:1.3; color:#fff; max-width:860px; margin:10px 0; letter-spacing:-.01em}
+  blockquote{font-family:var(--disp); font-style:italic; font-weight:300; font-size:clamp(23px,3.6vw,38px); line-height:1.3; color:#fff; max-width:860px; margin:14px 0; letter-spacing:-.01em}
   blockquote .hl{color:var(--coral); font-style:normal; font-weight:500}
 
-  footer{padding:80px 0 60px; border-top:1px solid var(--line); margin-top:40px}
+  /* embedded ACL paper */
+  .aclpaper{background:#fbfaf7; color:#161310; border:1px solid #e2dac9; border-radius:10px; padding:54px clamp(24px,5vw,64px); margin-top:36px; box-shadow:0 30px 80px rgba(0,0,0,.4)}
+  .aclpaper .ptitle{font-family:var(--disp); font-weight:500; font-size:clamp(24px,3.4vw,33px); line-height:1.15; text-align:center; color:#0e0c09; letter-spacing:-.01em}
+  .aclpaper .pauth{text-align:center; font-family:var(--serif); font-size:15px; color:#4a4236; margin-top:14px}
+  .aclpaper .pauth .aff{font-size:12.5px; color:#857a66; font-family:var(--mono)}
+  .aclpaper .abstract{margin:26px auto 6px; max-width:660px; font-size:15px; color:#2c271f; border-top:1px solid #e2dac9; border-bottom:1px solid #e2dac9; padding:18px 0}
+  .aclpaper .abstract b{font-variant:small-caps; letter-spacing:.04em; color:#0e0c09}
+  .aclcols{column-count:2; column-gap:30px; margin-top:26px; font-size:13.5px; line-height:1.6; color:#26221b; text-align:justify}
+  .aclcols h4{font-family:var(--disp); font-weight:600; font-size:15px; color:#0e0c09; margin:14px 0 6px; break-after:avoid}
+  .aclcols h4 .s{font-family:var(--mono); color:#9a6a2a; margin-right:6px}
+  .aclcols p{font-size:13.5px; color:#26221b; max-width:none; margin-bottom:10px}
+  .aclcols .figref{color:#9a6a2a; font-weight:500}
+  .aclcols .reflist{font-size:11.5px; color:#4a4236; line-height:1.5}
+  .aclcols .reflist div{margin-bottom:5px; padding-left:14px; text-indent:-14px}
+  .acltable{font-size:11.5px; border-collapse:collapse; width:100%; margin:8px 0}
+  .acltable td,.acltable th{border-bottom:1px solid #d8cfbc; padding:3px 5px; text-align:left}
+  .acltable th{font-family:var(--mono); font-size:10px; text-transform:uppercase; color:#7a7060}
+  @media(max-width:720px){.aclcols{column-count:1}}
+
+  footer{padding:76px 0 60px; border-top:1px solid var(--line); margin-top:30px}
   footer .mono{font-size:13px; color:var(--muted); line-height:2}
   .repro{display:grid; grid-template-columns:repeat(2,1fr); gap:6px 30px; margin-top:18px; font-family:var(--mono); font-size:13px; color:var(--muted)}
   .repro b{color:#cbd3e2; font-weight:500}
 
   @media(max-width:820px){
     .g2,.g3,.g4{grid-template-columns:1fr}
-    .demo{grid-template-columns:1fr; }
-    .arrow{transform:rotate(90deg)}
-    .repro{grid-template-columns:1fr}
-    .heronums{gap:30px}
-    body{font-size:17px}
+    .demo{grid-template-columns:1fr} .arrow{transform:rotate(90deg)}
+    .repro{grid-template-columns:1fr} .heronums{gap:28px} body{font-size:17px}
   }
 </style>
 </head>
 <body>
 <div id="prog"></div>
-<div class="topbar">
-  <span><b>Provenance Collapse</b> · research dossier</span>
-  <span>VelaOps Research · 2026</span>
-</div>
+<div class="topbar"><span><b>Provenance Collapse</b> · research dossier</span><span>VelaOps Research · 2026</span></div>
 
 <!-- HERO -->
-<header class="hero">
-  <div class="wrap">
-    <div class="kicker reveal in">A failure mode that gets worse as models get smarter</div>
-    <h1 class="reveal in d1">Inference<br>as <em>Fact</em>.</h1>
-    <p class="sub reveal in d2">When a capable AI agent writes notes to its own long-term memory, it quietly records its <b>guesses as facts the user never said</b> — and the more capable the model, the more it does it. We measured it across <b>10 models</b> and <b>5 vendors</b>.</p>
-    <div class="heronums reveal in d3">
-      <div><div class="n" data-count="7.1" data-suffix="%">0%</div><div class="l">small model (Llama-4 17B)</div></div>
-      <div><div class="n hot" data-count="30.1" data-suffix="%">0%</div><div class="l">frontier (DeepSeek V4-pro)</div></div>
-      <div><div class="n hot" data-count="39.8" data-suffix="%">0%</div><div class="l">worst case (Qwen3-32B)</div></div>
-    </div>
+<header class="hero"><div class="wrap">
+  <div class="kicker reveal in">A failure mode that gets worse as models get smarter</div>
+  <h1 class="reveal in d1">Inference<br>as <em>Fact</em>.</h1>
+  <p class="sub reveal in d2">The full story of how we found a way that capable AI agents quietly corrupt their own memory — writing down <b>guesses as facts you never said</b> — and why the smartest models do it most. A study across <b>10 models</b> and <b>5 vendors</b>.</p>
+  <div class="heronums reveal in d3">
+    <div><div class="n" data-count="7.1" data-suffix="%">0%</div><div class="l">small model · Llama-4 17B</div></div>
+    <div><div class="n hot" data-count="30.1" data-suffix="%">0%</div><div class="l">frontier · DeepSeek V4-pro</div></div>
+    <div><div class="n hot" data-count="39.8" data-suffix="%">0%</div><div class="l">worst · Qwen3-32B</div></div>
   </div>
-  <div class="scrollcue">scroll ↓</div>
-</header>
+  <div class="authors reveal in d3">VelaOps Research · prepared for academic review · June 2026 · target venue ACL 2027</div>
+</div><div class="scrollcue">the story ↓</div></header>
 
-<!-- THE QUESTION -->
-<section>
-  <div class="wrap">
-    <div class="sec-tag reveal">01 — The premise that breaks</div>
-    <h2 class="reveal">AI agents now keep a <em>diary</em>. We trust what's in it.</h2>
-    <p class="lead reveal">Modern AI assistants don't start fresh each time. After every conversation they write durable notes to themselves — a <span class="mono">MEMORY.md</span> file the model authors and re-reads across sessions. Everything the agent later believes about you flows from those notes.</p>
-    <p class="reveal d1">The unspoken assumption is simple: <b>what the agent writes down is what you actually told it.</b> Our work shows that assumption fails — systematically, and in a direction nobody expected. The failure is not forgetting. It is the opposite: the agent <span class="hl-bad">adds things you never said</span> and files them as fact.</p>
-    <blockquote class="reveal d2">You say <span class="mono" style="color:#9fb0c6">“the deploy failed again last night.”</span><br>A capable agent remembers: <span class="hl">“the user's infrastructure is chronically unreliable.”</span></blockquote>
-    <p class="reveal d3">That second sentence is an inference — a reasonable guess — written as a durable, unqualified fact. We call this <b>provenance collapse</b>: the boundary between <i>what was stated</i> and <i>what was inferred</i> collapses inside the agent's own memory.</p>
-  </div>
-</section>
+<!-- ===================== PART I : THE STORY ===================== -->
+<div class="part"><div class="wrap narrow reveal">
+  <div class="pno">Part I</div>
+  <h2 class="parttitle">How we <em>found</em> it.</h2>
+</div></div>
 
-<!-- THE JOURNEY -->
-<section class="paper">
-  <div class="wrap">
-    <div class="sec-tag reveal">02 — How we got here</div>
-    <h2 class="reveal">A dead end that pointed the way.</h2>
-    <p class="lead reveal">This finding is the survivor of a project that first failed — and the failure is what told us where to look.</p>
-    <div class="timeline reveal d1">
-      <div class="tl bad">
-        <div class="when">Start · “Soul Drift”</div>
-        <h4>The original idea: memory drifts as it's rewritten</h4>
-        <p>We hypothesized that an agent's memory slowly distorts each time it's re-summarized, depending on the rewriting style. It was real — but only in small and mid-tier models.</p>
-      </div>
-      <div class="tl bad">
-        <div class="when">The wall</div>
-        <h4>It vanished at the frontier</h4>
-        <p>On DeepSeek V4-pro, drift was <b>zero</b>. The effect <i>attenuated</i> with capability — so any claim that “this matters for frontier models like GPT-5” would die in review. A capability-shrinking weakness is not a frontier story.</p>
-      </div>
-      <div class="tl good">
-        <div class="when">The pivot</div>
-        <h4>Hunt for a weakness that <i>grows</i> with capability</h4>
-        <p>We inverted the search: find a failure that <b>requires</b> capability — one that gets <i>worse</i> in smarter models. A multi-agent literature sweep over ~190 papers surfaced the candidate: commission errors in self-authored memory.</p>
-      </div>
-      <div class="tl good">
-        <div class="when">The result</div>
-        <h4>Provenance collapse — and it scales the right way</h4>
-        <p>Not only does it survive at the frontier, it <b>intensifies</b> with capability, holds across five vendors, and has a cheap fix. That is the paper.</p>
-      </div>
-    </div>
-  </div>
-</section>
+<section><div class="wrap narrow">
+  <div class="sec-tag reveal">01 — Where it started</div>
+  <h2 class="reveal">We set out to study a <em>different</em> bug.</h2>
+  <p class="lead reveal">Every result here began as a side-quest from a project that was about to fail. The failure is what showed us where to look.</p>
+  <p class="drop reveal d1">Modern AI assistants no longer start each conversation from a blank slate. After every session they <b>write notes to themselves</b> — a running <span class="mono">MEMORY.md</span> file the model authors, re-reads, and rewrites over and over. It is the agent's diary, and everything it later believes about you is drawn from it. We were studying how that diary <i>degrades over time</i>: each time the agent re-summarizes its own notes, does the meaning quietly drift? We called it <b>“Soul Drift.”</b></p>
+  <p class="reveal d2">It was a reasonable hypothesis, and at first the data cooperated. Small and mid-tier models <i>did</i> drift as they rewrote their memory — facts blurred, emphasis shifted. We built a whole measurement harness around it: synthetic event streams, a held-out judge, preregistered probes. We thought we had a paper.</p>
+  <div class="aside reveal d2"><b>Why memory at all?</b> Because persistent memory is the fastest-growing piece of agent infrastructure in 2026 — and the one with the least scrutiny. Whatever an agent writes to memory silently shapes every future decision it makes for you.</div>
+</div></section>
 
-<!-- WHAT IS IT (DEMO) -->
-<section>
-  <div class="wrap">
-    <div class="sec-tag reveal">03 — The phenomenon, live</div>
-    <h2 class="reveal">Watch a memory <em>collapse</em>.</h2>
-    <p class="lead reveal">Below: a real session prompt on the left, and the note a capable model writes on the right. Watch what it adds that was never said.</p>
+<section class="paper-band"><div class="wrap narrow">
+  <div class="sec-tag reveal">02 — The moment it broke</div>
+  <h2 class="reveal">The best model showed <em>zero</em> drift.</h2>
+  <p class="lead reveal">When we ran the same test on a frontier model, the effect didn't shrink. It disappeared.</p>
+  <p class="drop reveal d1">We had been testing on open, mid-tier models. The instant we put the strongest model in the world at the time — DeepSeek V4-pro — through the identical pipeline, the drift was <b>flat zero</b>. Where a mid-tier model smeared its memory over many rewrites, the frontier model held its notes perfectly stable. The effect <i>attenuated with capability</i>: the better the model, the less it drifted.</p>
+  <p class="reveal d2">That is fatal for a research paper. A claim like <i>“this matters for frontier models like GPT-5”</i> dies the moment a reviewer points out the effect vanishes exactly where it would matter. A weakness that <b>shrinks</b> as models improve is a weakness that's already solving itself. We had measured something real — and watched it become irrelevant.</p>
+  <blockquote class="reveal d2">A failure that fades as models get smarter is <span class="hl">not a frontier story.</span> We needed the opposite.</blockquote>
+</div></section>
 
-    <div class="demo reveal d1">
-      <div class="panel">
-        <div class="phead"><span class="dot" style="background:var(--teal)"></span>What the user actually said</div>
-        <div class="chat">
-          <span class="u">USER ▸</span> “Ugh, the deploy failed again last night. Same thing as before basically. Anyway — can you draft a polite note to the team about it?”
-        </div>
-        <div class="cap">Source transcript · the ground truth</div>
-      </div>
-      <div class="arrow">▶</div>
-      <div class="panel">
-        <div class="phead"><span class="dot" style="background:var(--coral)"></span>What the agent wrote to memory</div>
-        <div class="note" id="noteOut"></div>
-        <div class="cap">Self-authored MEMORY.md entry</div>
-      </div>
-    </div>
-    <button class="replay" id="replayBtn">↻ Replay the collapse</button>
+<section><div class="wrap narrow">
+  <div class="sec-tag reveal">03 — The insight that flipped the search</div>
+  <h2 class="reveal">Hunt for a weakness that <em>grows</em> with capability.</h2>
+  <p class="lead reveal">Instead of a bug that capability cures, we went looking for a bug that capability <i>causes</i>.</p>
+  <p class="drop reveal d1">The pivot was a single inversion. The most interesting — and most publishable — failures are the ones that <b>require</b> intelligence: deception, scheming, over-reasoning, situational awareness. These don't appear in weak models because weak models aren't capable enough to commit them. They <i>emerge</i> with capability. If we could find a memory failure of that kind, it would survive at the frontier by definition — it would be a property <i>of</i> the frontier.</p>
+  <p class="reveal d2">So we reframed the entire question. Not <i>“how does memory degrade?”</i> (an omission story that favours small models) but <i>“what does a capable model actively put into memory that doesn't belong there?”</i> — a <b>commission</b> story that should favour large ones. A smarter model reasons more, infers more, fills gaps more. What if it does that <i>while writing its own memory</i>, and files the result as fact?</p>
+  <div class="aside reveal d2"><b>Commission vs omission.</b> Omission = forgetting things that were true (small models do this more). Commission = recording things that were never said (we bet large models would do this more). The whole pivot rides on that distinction.</div>
+</div></section>
 
-    <h3 class="reveal">Two precise definitions</h3>
-    <p class="reveal"><b>Commission, not omission.</b> Existing memory research measures <i>forgetting</i> — facts that get lost. Provenance collapse is the reverse: facts that get <i>invented</i>. A claim is “collapsed” when it is an inference <b>not entailed</b> by the conversation, written <b>without any hedge</b>, as flat fact.</p>
-    <p class="reveal d1"><b>The mechanism is gap-filling.</b> Faced with an under-specified, messy human message, a capable model does what it's trained to do — reason, infer, smooth over gaps. In a chat reply that's helpful. Written into permanent memory as fact, it's corruption that compounds across every future session.</p>
-  </div>
-</section>
+<section class="paper-band"><div class="wrap narrow">
+  <div class="sec-tag reveal">04 — The hunt</div>
+  <h2 class="reveal">A swarm of agents read the literature for us.</h2>
+  <p class="lead reveal">To find an unclaimed failure of exactly this shape, we ran a multi-agent search across the field.</p>
+  <p class="drop reveal d1">We launched a fan-out of research agents over roughly <b>190 papers</b> from ACL, NeurIPS, ICLR and recent arXiv, each hunting for capability-dependent failure modes, then put every candidate through adversarial refutation — other agents trying to prove the idea was already published. Most candidates died. One survived every refuter and matched the pivot perfectly: agents writing <b>unsupported inferences as fact</b> into their own persistent memory.</p>
+  <p class="reveal d2">It had everything we wanted: it should require capability (you must be smart enough to infer before you can over-infer), it lived in our existing harness, and — critically — no one had measured it. We named it <b>provenance collapse</b>: the boundary between <i>what the user stated</i> and <i>what the model inferred</i> collapses inside the agent's own memory.</p>
+</div></section>
 
-<!-- METHOD -->
-<section class="paper">
-  <div class="wrap">
-    <div class="sec-tag reveal">04 — How we measured it</div>
-    <h2 class="reveal">30 conversations. 10 models. One strict auditor.</h2>
-    <p class="lead reveal">Every number on this page comes from the same controlled pipeline, run identically across all models.</p>
+<!-- ===================== PART II : THE PHENOMENON ===================== -->
+<div class="part"><div class="wrap narrow reveal">
+  <div class="pno">Part II</div>
+  <h2 class="parttitle">What it <em>is</em>.</h2>
+</div></div>
 
-    <svg class="pipe reveal d1" viewBox="0 0 1040 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Method pipeline">
+<section><div class="wrap">
+  <div class="sec-tag reveal">05 — The phenomenon, in one figure</div>
+  <h2 class="reveal narrow">Two true sentences, then one invented one.</h2>
+  <p class="lead reveal narrow">Here is the failure as a single schematic — the kind of teaser figure a paper opens with.</p>
+
+  <div class="figure reveal d1"><div class="stage">
+    <svg viewBox="0 0 980 300" role="img" aria-label="Figure 1: provenance collapse schematic">
       <defs>
-        <marker id="ah" markerWidth="10" markerHeight="10" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#9a6a2a"/></marker>
-        <linearGradient id="heat" x1="0" x2="1"><stop offset="0" stop-color="#34c2a6"/><stop offset="0.5" stop-color="#f4a32a"/><stop offset="1" stop-color="#ff5a40"/></linearGradient>
+        <marker id="a1" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#6b7384"/></marker>
+        <linearGradient id="warm" x1="0" x2="1"><stop offset="0" stop-color="#f4a32a"/><stop offset="1" stop-color="#ff5a40"/></linearGradient>
       </defs>
-      <!-- step1 -->
-      <rect x="6" y="70" width="170" height="110" rx="12" fill="#fff" stroke="#ddd0ba"/>
-      <text x="91" y="104" text-anchor="middle" font-size="13" fill="#16120b" font-weight="600">30 sessions</text>
-      <text x="91" y="128" text-anchor="middle" font-size="11" fill="#7a7060">10 low · 10 med</text>
-      <text x="91" y="144" text-anchor="middle" font-size="11" fill="#7a7060">10 high ambiguity</text>
-      <text x="91" y="166" text-anchor="middle" font-size="10" fill="#9a6a2a">controlled inputs</text>
-      <line x1="178" y1="125" x2="232" y2="125" stroke="#9a6a2a" stroke-width="2" marker-end="url(#ah)"/>
-      <!-- step2 -->
-      <rect x="234" y="70" width="180" height="110" rx="12" fill="#fff" stroke="#ddd0ba"/>
-      <text x="324" y="104" text-anchor="middle" font-size="13" fill="#16120b" font-weight="600">agent writes</text>
-      <text x="324" y="124" text-anchor="middle" font-size="11" fill="#7a7060">MEMORY.md notes</text>
-      <text x="324" y="144" text-anchor="middle" font-size="11" fill="#7a7060">10 models · 5 vendors</text>
-      <text x="324" y="166" text-anchor="middle" font-size="10" fill="#9a6a2a">the unit under test</text>
-      <line x1="416" y1="125" x2="470" y2="125" stroke="#9a6a2a" stroke-width="2" marker-end="url(#ah)"/>
-      <!-- step3 -->
-      <rect x="472" y="70" width="180" height="110" rx="12" fill="#fff" stroke="#ddd0ba"/>
-      <text x="562" y="104" text-anchor="middle" font-size="13" fill="#16120b" font-weight="600">held-out judge</text>
-      <text x="562" y="124" text-anchor="middle" font-size="11" fill="#7a7060">decompose → claims</text>
-      <text x="562" y="144" text-anchor="middle" font-size="11" fill="#7a7060">label vs transcript</text>
-      <text x="562" y="166" text-anchor="middle" font-size="10" fill="#9a6a2a">different model family</text>
-      <line x1="654" y1="125" x2="708" y2="125" stroke="#9a6a2a" stroke-width="2" marker-end="url(#ah)"/>
-      <!-- step4 -->
-      <rect x="710" y="70" width="324" height="110" rx="12" fill="url(#heat)" opacity="0.92"/>
-      <text x="872" y="108" text-anchor="middle" font-size="14" fill="#16120b" font-weight="700">collapse rate</text>
-      <text x="872" y="132" text-anchor="middle" font-size="11.5" fill="#2a1c0c">unsupported &amp; unhedged claims</text>
-      <text x="872" y="150" text-anchor="middle" font-size="11.5" fill="#2a1c0c">÷ total claims</text>
-      <text x="872" y="170" text-anchor="middle" font-size="10" fill="#3a2410">the dependent variable</text>
-      <text x="20" y="30" font-size="12" fill="#9a6a2a" font-weight="600">THE PIPELINE</text>
+      <!-- (a) session -->
+      <text x="20" y="28" font-size="12" fill="#34c2a6" letter-spacing="2">(a) SESSION</text>
+      <rect x="20" y="44" width="250" height="210" rx="12" fill="#12151d" stroke="#262c39"/>
+      <text x="40" y="78" font-size="12" fill="#6b7384">user says</text>
+      <foreignObject x="38" y="90" width="218" height="150">
+        <div xmlns="http://www.w3.org/1999/xhtml" style="font-family:'Spectral',serif;color:#d6dcea;font-size:14px;line-height:1.5">“The deploy failed again last night. Same thing as before basically.”</div>
+      </foreignObject>
+      <line x1="272" y1="150" x2="332" y2="150" stroke="#6b7384" stroke-width="1.5" marker-end="url(#a1)"/>
+      <text x="276" y="140" font-size="10" fill="#6b7384">reads</text>
+      <!-- (b) agent -->
+      <text x="350" y="28" font-size="12" fill="#34c2a6" letter-spacing="2">(b) AGENT CONSOLIDATES</text>
+      <circle cx="430" cy="150" r="52" fill="#1a1f2b" stroke="#34c2a6" stroke-width="1.5"/>
+      <text x="430" y="146" font-size="13" fill="#fff" text-anchor="middle">LLM</text>
+      <text x="430" y="164" font-size="10" fill="#9aa3b4" text-anchor="middle">infers · fills gaps</text>
+      <line x1="484" y1="150" x2="548" y2="150" stroke="#6b7384" stroke-width="1.5" marker-end="url(#a1)"/>
+      <text x="490" y="140" font-size="10" fill="#6b7384">writes</text>
+      <!-- (c) memory -->
+      <text x="566" y="28" font-size="12" fill="#ff5a40" letter-spacing="2">(c) MEMORY.md</text>
+      <rect x="566" y="44" width="394" height="210" rx="12" fill="#12151d" stroke="#262c39"/>
+      <text x="586" y="80" font-size="13" fill="#9fe6d6">• deploy failed last night</text>
+      <text x="586" y="106" font-size="13" fill="#9fe6d6">• user says it's the same issue</text>
+      <line x1="586" y1="124" x2="940" y2="124" stroke="#262c39" stroke-dasharray="3 3"/>
+      <rect x="578" y="138" width="372" height="58" rx="8" fill="rgba(255,90,64,.12)" stroke="url(#warm)"/>
+      <foreignObject x="588" y="146" width="354" height="46">
+        <div xmlns="http://www.w3.org/1999/xhtml" style="font-family:'Spectral',serif;color:#ffb3a4;font-size:13.5px;line-height:1.4">• the user's deployment pipeline is unreliable, with recurring infrastructure problems</div>
+      </foreignObject>
+      <rect x="586" y="210" width="150" height="24" rx="12" fill="url(#warm)"/>
+      <text x="600" y="226" font-size="11" fill="#1a0f08" font-weight="600">⚠ NEVER STATED</text>
+      <text x="752" y="226" font-size="11" fill="#9aa3b4">written as flat fact →</text>
     </svg>
-
-    <div class="grid g4 reveal d2">
-      <div class="card"><div class="big">~1,500</div><div class="lbl">claims judged</div></div>
-      <div class="card"><div class="big">3</div><div class="lbl">ambiguity levels</div></div>
-      <div class="card"><div class="big">5</div><div class="lbl">vendors</div></div>
-      <div class="card"><div class="big">$0.17</div><div class="lbl">total API cost</div></div>
-    </div>
-    <p style="margin-top:26px" class="reveal d3"><b>Why a “held-out judge”?</b> The auditor that labels claims is always a <i>different model family</i> than the agent being judged — never self-grading. We then checked the auditor itself against independent judges (next to the results below).</p>
   </div>
-</section>
-
-<!-- RESULT 1: CAPABILITY LAW -->
-<section>
-  <div class="wrap">
-    <div class="sec-tag reveal">05 — The headline result</div>
-    <h2 class="reveal">The smarter the model, the <em>more</em> it invents.</h2>
-    <p class="lead reveal">A small base model collapses on 7% of the claims it writes. Every larger, frontier, or reasoning model — across five vendors — collapses on <span class="hl-bad">22–40%</span>. Each bar is colored by its own rate: cool &amp; faithful, or hot &amp; collapsing.</p>
-    <div class="chartbox reveal d1">
-      <h3>Provenance-collapse rate by model</h3>
-      <div class="legend"><span><i style="background:#34c2a6"></i>faithful</span><span><i style="background:#f4a32a"></i>collapsing</span><span><i style="background:#ff5a40"></i>severe</span></div>
-      <canvas id="ladder" height="300"></canvas>
-      <div class="chartcap">Bars = % of self-authored claims that are unsupported inferences asserted as fact (v1 prompt). Every model above the anchor differs at Fisher one-sided <span class="mono">p ≤ 0.0003</span>. n shown in tooltip.</div>
-    </div>
-    <p style="margin-top:30px" class="reveal">Three things make this robust rather than a fluke:</p>
-    <p class="reveal d1"><b>It holds across five independent vendors</b> — Meta, OpenAI, Mistral, DeepSeek, Qwen, Zhipu. This is not one lab's quirk.</p>
-    <p class="reveal d2"><b>It persists at the very frontier.</b> GPT-5 (29.8%) and DeepSeek V4-pro (30.1%) are among the worst — exactly the models people trust most. Capability does not cure it; if anything it deepens it.</p>
-    <p class="reveal d3"><b>It is a threshold, stated honestly.</b> The jump is from “small base model” to “everything capable.” Within a family the climb is directional but not strictly monotone — so we frame it as a capability <i>threshold</i>, not a smooth dial.</p>
+  <div class="figcap"><b>Figure 1</b> Provenance collapse. (a) The user makes a brief, ordinary statement. (b) The agent consolidates the session into long-term memory, reasoning over it. (c) Two faithful, <span style="color:#9fe6d6">entailed</span> notes are written — and then a third, <span style="color:#ffb3a4">unsupported inference</span> (“unreliable… recurring problems”) is recorded as durable fact. Nothing in the session said that. The inference now conditions every future session.</div>
   </div>
-</section>
+</div></section>
 
-<!-- RESULT 2: AMBIGUITY -->
-<section class="paper">
-  <div class="wrap">
-    <div class="sec-tag reveal">06 — The mechanism, visible</div>
-    <h2 class="reveal">Give it a gap, and it fills it.</h2>
-    <p class="lead reveal">Inside every model, collapse is near-zero when the user states things plainly — and explodes when the input is vague. That is the fingerprint of gap-filling: the model invents most when there's most to infer.</p>
-    <div class="chartbox reveal d1">
-      <h3>Collapse rate by input ambiguity</h3>
-      <canvas id="amb" height="300"></canvas>
-      <div class="chartcap">Three representative models. Low-ambiguity inputs (facts stated outright) yield almost no collapse; vague, emotional inputs send capable models to 40–56%.</div>
+<section class="paper-band"><div class="wrap">
+  <div class="sec-tag reveal">06 — How the agent behaves</div>
+  <h2 class="reveal narrow">Watch the read → infer → write loop.</h2>
+  <p class="lead reveal narrow">The animation below loops the agent's actual behaviour: it reads a messy human message, silently infers to fill the gap, and commits the inference to memory.</p>
+  <div class="figure reveal d1" style="background:#0a0c11; border-color:#262c39"><div class="stage">
+    <svg id="scene" viewBox="0 0 980 250" role="img" aria-label="Animated agent behaviour loop">
+      <!-- user -->
+      <g class="uMsg">
+        <rect x="14" y="86" width="210" height="78" rx="12" fill="#12151d" stroke="#34c2a6" stroke-width="1.3"/>
+        <text x="30" y="112" font-size="10" fill="#34c2a6">USER ▸</text>
+        <foreignObject x="28" y="118" width="184" height="44"><div xmlns="http://www.w3.org/1999/xhtml" style="font-family:'Spectral',serif;color:#d6dcea;font-size:12.5px;line-height:1.35">“deploy failed again last night…”</div></foreignObject>
+      </g>
+      <line class="f1" x1="228" y1="125" x2="300" y2="125" stroke="#34c2a6" stroke-width="2" stroke-dasharray="60" marker-end="url(#a1)"/>
+      <!-- agent -->
+      <g class="agent">
+        <circle cx="360" cy="125" r="48" fill="#161b26" stroke="#f4a32a" stroke-width="1.6"/>
+        <text x="360" y="121" font-size="13" fill="#fff" text-anchor="middle">LLM</text>
+        <text x="360" y="139" font-size="9" fill="#f4a32a" text-anchor="middle">consolidating</text>
+      </g>
+      <!-- thought bubble -->
+      <g class="thought">
+        <rect x="296" y="22" width="240" height="44" rx="12" fill="rgba(244,163,42,.10)" stroke="#f4a32a" stroke-dasharray="4 3"/>
+        <text x="312" y="42" font-size="11" fill="#f4d39a">“probably unreliable… recurring”</text>
+        <text x="312" y="57" font-size="9" fill="#9a8050">↳ inference, not in the transcript</text>
+        <circle cx="350" cy="74" r="4" fill="#f4a32a" opacity=".6"/><circle cx="360" cy="84" r="3" fill="#f4a32a" opacity=".4"/>
+      </g>
+      <line class="f2" x1="408" y1="125" x2="486" y2="125" stroke="#ff5a40" stroke-width="2" stroke-dasharray="60" marker-end="url(#a1)"/>
+      <!-- memory doc -->
+      <rect x="500" y="40" width="466" height="170" rx="12" fill="#12151d" stroke="#262c39"/>
+      <text x="522" y="66" font-size="10" fill="#6b7384" letter-spacing="2">MEMORY.md</text>
+      <text class="l1" x="522" y="98" font-size="13" fill="#9fe6d6">• deploy failed last night</text>
+      <text class="l2" x="522" y="124" font-size="13" fill="#9fe6d6">• user says it's the same issue as before</text>
+      <g class="inf">
+        <rect x="514" y="140" width="440" height="34" rx="7" fill="rgba(255,90,64,.13)" stroke="#ff5a40"/>
+        <text x="524" y="161" font-size="13" fill="#ffb3a4">• pipeline is unreliable, recurring infrastructure problems</text>
+      </g>
+      <g class="warn">
+        <rect x="522" y="184" width="150" height="20" rx="10" fill="#ff5a40"/>
+        <text x="534" y="198" font-size="10" fill="#1a0f08" font-weight="600">⚠ NEVER STATED</text>
+      </g>
+    </svg>
+  </div>
+  <div class="figcap"><b>Figure 2</b> The behaviour, animated (loops). The agent reads an under-specified message, forms an inference in its reasoning (amber), and writes that inference into memory as an unqualified fact (coral). The same helpfulness that makes it a good chat partner makes it a bad archivist.</div>
+  </div>
+  <p class="reveal" style="margin-top:30px"><b>Why does it happen?</b> Faced with a vague human message, a capable model does what it was trained to do — reason, infer, smooth over gaps. In a live reply that is helpful. Written into permanent memory as fact, it is corruption that <b>compounds</b>: every future session reads the invented claim as ground truth and builds on it.</p>
+</div></section>
+
+<section><div class="wrap">
+  <div class="sec-tag reveal">07 — Try it yourself</div>
+  <h2 class="reveal narrow">A real collapse, typed out.</h2>
+  <p class="lead reveal narrow">Left: what the user said. Right: the note a capable model actually wrote. The red text is what it invented.</p>
+  <div class="demo reveal d1">
+    <div class="panel"><div class="phead"><span class="dot" style="background:var(--teal)"></span>What the user actually said</div>
+      <div class="chat"><span class="u">USER ▸</span> “Ugh, the deploy failed again last night. Same thing as before basically. Anyway — can you draft a polite note to the team about it?”</div>
+      <div class="cap">Source transcript · the ground truth</div></div>
+    <div class="arrow">▶</div>
+    <div class="panel"><div class="phead"><span class="dot" style="background:var(--coral)"></span>What the agent wrote to memory</div>
+      <div class="note" id="noteOut"></div><div class="cap">Self-authored MEMORY.md entry</div></div>
+  </div>
+  <button class="replay" id="replayBtn">↻ Replay the collapse</button>
+
+  <h3 class="reveal">Two precise definitions</h3>
+  <p class="reveal"><b>Commission, not omission.</b> Existing memory research measures <i>forgetting</i> — facts that get lost. Provenance collapse is the reverse: facts that get <i>invented</i>. Formally, a written claim is “collapsed” when it is <b>not entailed</b> by the conversation and written <b>without any hedge</b>, as flat fact.</p>
+  <p class="reveal d1"><b>The metric.</b> We decompose each memory note into atomic claims, label every claim against the transcript (entailed / unsupported / contradicted), and report <span class="mono">collapse rate = unsupported-&amp;-unhedged claims ÷ total claims</span>.</p>
+</div></section>
+
+<!-- ===================== PART III : THE EXPERIMENT ===================== -->
+<div class="part"><div class="wrap narrow reveal">
+  <div class="pno">Part III</div>
+  <h2 class="parttitle">How we <em>measured</em> it.</h2>
+</div></div>
+
+<section class="paper-band"><div class="wrap">
+  <div class="sec-tag reveal">08 — The pipeline</div>
+  <h2 class="reveal narrow">30 conversations. 10 models. One strict auditor.</h2>
+  <p class="lead reveal narrow">Every number on this page comes from one controlled pipeline, run identically across all models.</p>
+  <div class="figure reveal d1"><div class="stage">
+    <svg viewBox="0 0 1000 200" role="img" aria-label="Figure 3: method pipeline">
+      <defs><marker id="a2" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#9a6a2a"/></marker>
+      <linearGradient id="heat3" x1="0" x2="1"><stop offset="0" stop-color="#34c2a6"/><stop offset="0.5" stop-color="#f4a32a"/><stop offset="1" stop-color="#ff5a40"/></linearGradient></defs>
+      <rect x="4" y="50" width="162" height="100" rx="11" fill="#fff" stroke="#ddd0ba"/>
+      <text x="85" y="84" text-anchor="middle" font-size="13" fill="#16120b" font-weight="600" font-family="'Spectral'">30 sessions</text>
+      <text x="85" y="106" text-anchor="middle" font-size="11" fill="#7a7060" font-family="'IBM Plex Mono'">10 low·10 med·10 high</text>
+      <text x="85" y="124" text-anchor="middle" font-size="10" fill="#9a6a2a" font-family="'IBM Plex Mono'">ambiguity</text>
+      <line x1="168" y1="100" x2="214" y2="100" stroke="#9a6a2a" stroke-width="2" marker-end="url(#a2)"/>
+      <rect x="216" y="50" width="170" height="100" rx="11" fill="#fff" stroke="#ddd0ba"/>
+      <text x="301" y="84" text-anchor="middle" font-size="13" fill="#16120b" font-weight="600" font-family="'Spectral'">agent writes memory</text>
+      <text x="301" y="106" text-anchor="middle" font-size="11" fill="#7a7060" font-family="'IBM Plex Mono'">10 models · 5 vendors</text>
+      <text x="301" y="124" text-anchor="middle" font-size="10" fill="#9a6a2a" font-family="'IBM Plex Mono'">unit under test</text>
+      <line x1="388" y1="100" x2="434" y2="100" stroke="#9a6a2a" stroke-width="2" marker-end="url(#a2)"/>
+      <rect x="436" y="50" width="178" height="100" rx="11" fill="#fff" stroke="#ddd0ba"/>
+      <text x="525" y="84" text-anchor="middle" font-size="13" fill="#16120b" font-weight="600" font-family="'Spectral'">held-out judge</text>
+      <text x="525" y="106" text-anchor="middle" font-size="11" fill="#7a7060" font-family="'IBM Plex Mono'">decompose → label</text>
+      <text x="525" y="124" text-anchor="middle" font-size="10" fill="#9a6a2a" font-family="'IBM Plex Mono'">different family</text>
+      <line x1="616" y1="100" x2="662" y2="100" stroke="#9a6a2a" stroke-width="2" marker-end="url(#a2)"/>
+      <rect x="664" y="50" width="332" height="100" rx="11" fill="url(#heat3)" opacity=".93"/>
+      <text x="830" y="90" text-anchor="middle" font-size="14" fill="#16120b" font-weight="700" font-family="'Spectral'">collapse rate</text>
+      <text x="830" y="112" text-anchor="middle" font-size="11" fill="#2a1c0c" font-family="'IBM Plex Mono'">unsupported·unhedged ÷ all</text>
+      <text x="830" y="130" text-anchor="middle" font-size="10" fill="#3a2410" font-family="'IBM Plex Mono'">dependent variable</text>
+    </svg>
+  </div><div class="figcap"><b>Figure 3</b> The measurement pipeline. Controlled sessions at three ambiguity levels → each model writes memory → a held-out judge from a different model family decomposes and labels every claim → collapse rate. Identical for all 10 models.</div></div>
+  <div class="grid g4 reveal d2">
+    <div class="card"><div class="big">~1,500</div><div class="lbl">claims judged</div></div>
+    <div class="card"><div class="big">3</div><div class="lbl">ambiguity levels</div></div>
+    <div class="card"><div class="big">5</div><div class="lbl">vendors</div></div>
+    <div class="card"><div class="big">$0.17</div><div class="lbl">total API cost</div></div>
+  </div>
+  <p style="margin-top:24px" class="reveal d3"><b>Controls baked in.</b> ≥30 claims per cell (no small-sample noise), paired tests with raw counts, a prompt-paraphrase sensitivity arm, and a judge always from a <i>different model family</i> than the agent — never self-grading.</p>
+</div></section>
+
+<!-- ===================== PART IV : RESULTS ===================== -->
+<div class="part"><div class="wrap narrow reveal">
+  <div class="pno">Part IV</div>
+  <h2 class="parttitle">What we <em>found</em>.</h2>
+</div></div>
+
+<section><div class="wrap">
+  <div class="sec-tag reveal">09 — The headline result</div>
+  <h2 class="reveal narrow">The smarter the model, the <em>more</em> it invents.</h2>
+  <p class="lead reveal narrow">A small base model collapses on 7% of its claims. Every larger, frontier, or reasoning model — across five vendors — lands at <span class="hl-bad">22–40%</span>.</p>
+  <div class="chartbox reveal d1">
+    <h3>Figure 4 · Collapse rate by model</h3>
+    <div class="legend"><span><i style="background:#34c2a6"></i>faithful</span><span><i style="background:#f4a32a"></i>collapsing</span><span><i style="background:#ff5a40"></i>severe</span></div>
+    <canvas id="ladder" height="300"></canvas>
+    <div class="chartcap">% of self-authored claims that are unsupported inferences asserted as fact (v1 prompt). Every model above the anchor differs at Fisher one-sided <span class="mono">p ≤ 0.0003</span>. Hover for n.</div>
+  </div>
+  <p style="margin-top:28px" class="reveal"><b>Holds across five independent vendors</b> — Meta, OpenAI, Mistral, DeepSeek, Qwen, Zhipu. Not one lab's quirk.</p>
+  <p class="reveal d1"><b>Persists at the very frontier.</b> GPT-5 (29.8%) and DeepSeek V4-pro (30.1%) are among the worst — the models people trust most. Capability does not cure it.</p>
+  <p class="reveal d2"><b>A threshold, stated honestly.</b> The jump is from “small base model” to “everything capable.” Within a family the climb is directional but not strictly monotone — so we call it a capability <i>threshold</i>, not a smooth dial.</p>
+</div></section>
+
+<section class="paper-band"><div class="wrap">
+  <div class="sec-tag reveal">10 — The mechanism, visible</div>
+  <h2 class="reveal narrow">Give it a gap, and it fills it.</h2>
+  <p class="lead reveal narrow">Inside every model, collapse is near-zero when the user states things plainly — and explodes when the input is vague. The fingerprint of gap-filling.</p>
+  <div class="chartbox reveal d1">
+    <h3>Figure 5 · Collapse rate by input ambiguity</h3>
+    <canvas id="amb" height="300"></canvas>
+    <div class="chartcap">Low-ambiguity inputs (facts stated outright) yield almost no collapse; vague, emotional inputs send capable models to 40–56%. The effect tracks how much there is to infer.</div>
+  </div>
+</div></section>
+
+<section><div class="wrap">
+  <div class="sec-tag reveal">11 — Can we trust the auditor?</div>
+  <h2 class="reveal narrow">The judge, judged.</h2>
+  <p class="lead reveal narrow">“An LLM grading an LLM is circular.” So we re-labeled a random sample with two more judges from different families and measured agreement.</p>
+  <div class="grid g3 reveal d1">
+    <div class="card"><div class="big" style="color:var(--teal)">κ 0.63</div><div class="lbl">vs Qwen3-32B judge</div><div class="desc">substantial agreement</div></div>
+    <div class="card"><div class="big" style="color:var(--teal)">κ 0.68</div><div class="lbl">vs gpt-oss-120B judge</div><div class="desc">substantial agreement</div></div>
+    <div class="card"><div class="big" style="color:var(--teal)">κ 0.87</div><div class="lbl">vs 3-judge majority</div><div class="desc">near-perfect · 87.5% raw</div></div>
+  </div>
+  <p style="margin-top:24px" class="reveal d2">Independent judges from different vendors converge on the same collapse decisions — the metric measures a real, agreed-upon thing. <span class="mono" style="color:var(--muted)">(Gold human labels: in progress.)</span></p>
+</div></section>
+
+<!-- ===================== PART V : THE FIX ===================== -->
+<div class="part"><div class="wrap narrow reveal"><div class="pno">Part V</div><h2 class="parttitle">How to <em>stop</em> it.</h2></div></div>
+
+<section class="paper-band"><div class="wrap">
+  <div class="sec-tag reveal">12 — The fix</div>
+  <h2 class="reveal narrow">One paragraph of instruction <em>nearly erases</em> it.</h2>
+  <p class="lead reveal narrow">A “provenance-disciplined” prompt — <i>record only what was stated; mark inferences as inferred; omit when unsure</i> — cuts collapse 60–97%.</p>
+  <div class="chartbox reveal d1">
+    <h3>Figure 6 · Baseline vs. provenance-disciplined prompt</h3>
+    <canvas id="mit" height="300"></canvas>
+    <div class="chartcap">Paired on identical sessions. Reductions significant at McNemar <span class="mono">p ≤ 0.0034</span> for all three models.</div>
+  </div>
+  <h3 class="reveal">“But did it just write less?”</h3>
+  <p class="reveal">The natural worry: maybe it cut inventions only by writing fewer notes, dropping real facts too. So we measured <b>stated-fact recall</b>: of what the user genuinely said, how much survives?</p>
+  <div class="chartbox reveal d1">
+    <h3>Figure 7 · Stated-fact recall — baseline vs disciplined</h3>
+    <canvas id="rec" height="260"></canvas>
+    <div class="chartcap">Recall stays within ~3 points (every paired-difference CI includes zero) while collapse drops 60–97%. The fix removes <span class="hl-good">inventions</span>, not <span class="hl-good">facts</span>. Confound closed.</div>
+  </div>
+</div></section>
+
+<!-- ===================== PART VI : NOVELTY ===================== -->
+<div class="part"><div class="wrap narrow reveal"><div class="pno">Part VI</div><h2 class="parttitle">Is it <em>new</em>?</h2></div></div>
+
+<section><div class="wrap">
+  <div class="sec-tag reveal">13 — The novelty check</div>
+  <h2 class="reveal narrow">We tried hard to find the paper that kills this.</h2>
+  <p class="lead reveal narrow">An adversarial sweep — 100+ search agents, ~190 sources across ACL, NeurIPS, ICLR, arXiv — hunted for prior work that already does this. Every nearby paper is cleanly differentiated.</p>
+  <div class="verdict-banner reveal d1"><div class="v">UNIQUE.</div>
+    <p>No published or preprint work measures write-time commission of unstated facts <b>as a function of model capability across families</b> in self-authored persistent memory. The one paper that even shares the term proposes a fix — without ever measuring the problem.</p></div>
+  <div class="grid g2" style="margin-top:22px">
+    <div class="rw reveal d1"><div class="id">arXiv:2605.25869 · concurrent</div><h4>MemIR — typed-memory fix</h4><p>Coins “provenance-role collapse” and proposes an architectural fix. Reports <b>no baseline rate</b> and <b>no capability scaling</b>. Fixes a problem nobody measured — we measure it.</p><div class="verdict">complementary, not scooping</div></div>
+    <div class="rw reveal d2"><div class="id">arXiv:2502.09597</div><h4>PrefEval</h4><p>Tests whether models <i>follow stated</i> preferences — recall, the opposite of inventing unstated ones.</p><div class="verdict">different failure (omission)</div></div>
+    <div class="rw reveal d1"><div class="id">arXiv:2603.17781</div><h4>Facts as First-Class Objects</h4><p>Targets compaction <i>loss</i> — forgetting facts, not fabricating them.</p><div class="verdict">different failure (omission)</div></div>
+    <div class="rw reveal d2"><div class="id">2306.09479 · 2109.07958</div><h4>Inverse scaling · TruthfulQA</h4><p>Larger-is-worse on prompted <i>QA truthfulness</i> — a different setting; never studied in agent memory writing.</p><div class="verdict">precedent, not overlap</div></div>
+  </div>
+</div></section>
+
+<!-- ===================== PART VII : THE PAPER ===================== -->
+<div class="part"><div class="wrap narrow reveal"><div class="pno">Part VII</div><h2 class="parttitle">The <em>paper</em>.</h2>
+  <p style="color:#bcc5d6;margin-top:16px">The working ACL submission, in its own format — abstract, sections, figures, and references. Every number traces to a run in the footer.</p></div></div>
+
+<section style="padding-top:20px"><div class="wrap">
+  <div class="aclpaper reveal">
+    <div class="ptitle">Inference as Fact: Capability-Scaled Provenance Collapse<br>in Self-Authored Agent Memory</div>
+    <div class="pauth">VelaOps Research<br><span class="aff">working draft · target: ACL 2027 (main)</span></div>
+    <div class="abstract"><b>Abstract.</b> LLM agents increasingly maintain their own persistent natural-language memory — notes the model writes to itself and re-reads across sessions. We identify and measure a write-time failure mode we call <i>provenance collapse</i>: the agent records unsupported inferences as flat declarative facts the user never stated. This is a <i>commission</i> error, distinct from the omission/recall failures existing memory benchmarks measure. Across 30 controlled sessions and 10 models from 5 vendors, provenance collapse <i>scales with model capability</i>: a small base model (Llama-4-17B) collapses on 7.1% of self-authored claims, while every larger, frontier, or reasoning model — including GPT-5 and DeepSeek-V4-pro — collapses on 22–40% (all Fisher one-sided p ≤ 0.0003). The effect is a capability threshold that persists at the frontier and grows with input ambiguity. Our metric is validated by cross-family judge agreement (Cohen's κ = 0.63–0.68). Finally, the failure is largely fixable at the prompt level: a provenance-disciplined instruction reduces collapse 60–97% (McNemar p ≤ 0.0034) while preserving stated-fact recall.</div>
+    <div class="aclcols">
+      <h4><span class="s">1</span>Introduction</h4>
+      <p>Persistent memory is becoming standard agent infrastructure: assistants summarise each session into durable notes that condition all future behaviour. The implicit assumption is that what the agent writes is what it was told. We show this fails systematically, and worse in more capable models. We define <i>provenance collapse</i> as the event in which a model writes, into its persistent memory, a claim not entailed by the session it summarises, as if it were stated fact (<span class="figref">Figure 1</span>). Our contributions: (i) the phenomenon and a validated claim-level metric; (ii) a capability-scaling law across 10 models and 5 vendors; (iii) a prompt-level mitigation.</p>
+      <h4><span class="s">2</span>Related Work</h4>
+      <p>Concurrent work (MemIR; Jin et al., 2026) names “provenance-role collapse” and proposes a typed-memory architecture, but reports no baseline rate and no capability scaling. Memory benchmarks (LoCoMo; LongMemEval; MemoryAgentBench) measure recall of stated information, not write-time fabrication. PrefEval measures adherence to stated preferences — the converse. Inverse scaling and TruthfulQA document larger-is-worse on prompted QA truthfulness, a distinct setting. Ours is the first measurement of commission-vs-capability in self-authored memory.</p>
+      <h4><span class="s">3</span>Method</h4>
+      <p>We construct 30 sessions at three ambiguity levels. Each model consolidates each session into memory. A held-out judge from a different model family decomposes every note into atomic claims and labels each <span class="figref">entailed</span>, <span class="figref">unsupported</span>, or <span class="figref">contradicted</span> against the transcript (<span class="figref">Figure 3</span>). Collapse rate = unsupported-and-unhedged claims ÷ total claims. Controls: ≥30 claims/cell, paired tests, prompt-paraphrase arm, cross-family judge.</p>
+      <h4><span class="s">4</span>Results</h4>
+      <p>Collapse rises from 7.1% (Llama-4-17B) to 22–40% across nine larger/frontier/reasoning models, every contrast Fisher p ≤ 0.0003 (<span class="figref">Table 1</span>, <span class="figref">Figure 4</span>). It persists at the frontier (GPT-5 29.8%, V4-pro 30.1%) and grows with ambiguity (<span class="figref">Figure 5</span>): within Qwen3-32B, 8.9% → 44.1% → 55.9% from low to high. The metric is reliable across families (κ 0.63–0.68).</p>
+      <table class="acltable">
+        <tr><th>model</th><th>vendor</th><th>collapse</th></tr>
+        <tr><td>Llama-4 17B</td><td>Meta</td><td>7.1%</td></tr>
+        <tr><td>GPT-5-mini</td><td>OpenAI</td><td>22.4%</td></tr>
+        <tr><td>Llama-3.3 70B</td><td>Meta</td><td>23.9%</td></tr>
+        <tr><td>Mistral Large 3</td><td>Mistral</td><td>24.3%</td></tr>
+        <tr><td>DeepSeek V4-flash</td><td>DeepSeek</td><td>25.5%</td></tr>
+        <tr><td>GPT-5</td><td>OpenAI</td><td>29.8%</td></tr>
+        <tr><td>DeepSeek V4-pro</td><td>DeepSeek</td><td>30.1%</td></tr>
+        <tr><td>Qwen3-32B</td><td>Qwen</td><td>39.8%</td></tr>
+      </table>
+      <p style="font-size:10.5px;color:#7a7060">Table 1: Collapse rate by model (abbrev.; GLM-4.7 23.3%, gpt-oss-120B 23.9% omitted for space).</p>
+      <h4><span class="s">5</span>Mitigation</h4>
+      <p>A provenance-disciplined consolidation prompt cuts collapse 60–97% (Qwen3-32B 36.1→1.0%, Llama-3.3-70B 24.7→4.7%, GPT-5-mini 16.5→6.5%; McNemar p ≤ 0.0034; <span class="figref">Figure 6</span>). Stated-fact recall is preserved within 3 points (<span class="figref">Figure 7</span>), ruling out a “wrote-less” confound.</p>
+      <h4><span class="s">6</span>Limitations</h4>
+      <p>Absolute magnitude is prompt-sensitive; the capability ordering is robust but within-family steps are not individually significant (a threshold, not a smooth law). Labels are judge-based (human validation in progress). Sessions are synthetic; naturalistic deployment is future work.</p>
+      <h4><span class="s">7</span>Conclusion</h4>
+      <p>Provenance collapse is, to our knowledge, the first LLM-agent memory failure shown to intensify with capability rather than fade — measurable, cross-vendor, present at the frontier, and substantially fixable with a single prompt.</p>
+      <h4><span class="s"></span>References</h4>
+      <div class="reflist">
+        <div>Jin et al. 2026. Mitigating Provenance-Role Collapse via Typed Memory. arXiv:2605.25869.</div>
+        <div>Zhang et al. 2025. PrefEval. arXiv:2502.09597.</div>
+        <div>2026. Facts as First-Class Objects. arXiv:2603.17781.</div>
+        <div>Maharana et al. 2024. LoCoMo. arXiv:2402.17753.</div>
+        <div>Wu et al. 2025. LongMemEval. arXiv:2410.10813.</div>
+        <div>McKenzie et al. 2023. Inverse Scaling. arXiv:2306.09479.</div>
+        <div>Lin et al. 2022. TruthfulQA. arXiv:2109.07958.</div>
+      </div>
     </div>
   </div>
-</section>
+  <p class="mono reveal" style="margin-top:16px;color:var(--muted2);font-size:13px;text-align:center">Full draft: <span style="color:#cbd3e2">PAPER_DRAFT.md</span> in the project repository.</p>
+</div></section>
 
-<!-- JUDGE VALIDATION -->
-<section>
-  <div class="wrap">
-    <div class="sec-tag reveal">07 — Can we trust the auditor?</div>
-    <h2 class="reveal">The judge, judged.</h2>
-    <p class="lead reveal">The obvious objection: “an LLM grading an LLM is circular.” So we re-labeled a random sample with two more independent judges from different model families and measured agreement.</p>
-    <div class="grid g3 reveal d1">
-      <div class="card"><div class="big" style="color:var(--teal)">κ 0.63</div><div class="lbl">vs Qwen3-32B judge</div><div class="desc">substantial agreement</div></div>
-      <div class="card"><div class="big" style="color:var(--teal)">κ 0.68</div><div class="lbl">vs gpt-oss-120B judge</div><div class="desc">substantial agreement</div></div>
-      <div class="card"><div class="big" style="color:var(--teal)">κ 0.87</div><div class="lbl">vs 3-judge majority</div><div class="desc">near-perfect · 87.5% raw</div></div>
-    </div>
-    <p style="margin-top:26px" class="reveal d2">Independent judges from different vendors converge on the same collapse decisions. The metric is measuring a real, agreed-upon thing — not one model's idiosyncrasy. <span class="mono" style="color:var(--muted)">(Gold human labels: in progress.)</span></p>
+<!-- LIMITATIONS + CONCLUSION -->
+<section class="paper-band"><div class="wrap">
+  <div class="sec-tag reveal">14 — What we're not claiming</div>
+  <h2 class="reveal narrow">The honest fine print.</h2>
+  <div class="limit reveal"><b>Magnitude is prompt-sensitive.</b> Absolute rates shift with consolidation wording (one model fell to 2.4% under one phrasing). The capability <i>ordering</i> holds; we report per-prompt.</div>
+  <div class="limit reveal d1"><b>A threshold, not a smooth law.</b> Within-family frontier steps are directional but not individually significant.</div>
+  <div class="limit reveal d2"><b>Judge-based labels.</b> Validated by cross-family agreement (κ 0.63–0.68); gold human labels still being collected.</div>
+  <div class="limit reveal d3"><b>Controlled, synthetic sessions.</b> 30 hand-built transcripts; naturalistic long-horizon deployments are next.</div>
+</div></section>
+
+<section><div class="wrap narrow">
+  <div class="sec-tag reveal">15 — Why it matters</div>
+  <blockquote class="reveal">As we hand agents <span class="hl">durable memory</span> and more capability, they don't just remember better — they <span class="hl">remember things we never said</span>, and write them down as truth.</blockquote>
+  <p class="lead reveal d1" style="margin-top:28px">Provenance collapse is the first LLM-agent memory failure shown to <b>intensify with capability</b> rather than fade. Measurable, cross-vendor, present at the frontier — and substantially fixable with a single prompt. A novel phenomenon, a validated metric, a capability law, and a working mitigation.</p>
+</div></section>
+
+<footer><div class="wrap">
+  <div class="mono"><b style="color:#fff; font-family:var(--disp); font-size:18px">Reproducibility</b></div>
+  <div class="repro">
+    <div><b>Capability law</b> — provenance_collapse_full · provfull-1781157672</div>
+    <div><b>Frontier (GPT-5/Mistral)</b> — provenance_collapse_frontier · provfront-1781174524</div>
+    <div><b>Judge validation</b> — judge_validation · κ 0.63–0.68</div>
+    <div><b>Mitigation</b> — mitigation_experiment · mitig-1781174572</div>
+    <div><b>Recall confound</b> — recall_check · recall-1781194661</div>
+    <div><b>Novelty</b> — adversarial deep-research · verdict UNIQUE</div>
   </div>
-</section>
-
-<!-- RESULT 3: MITIGATION -->
-<section class="paper">
-  <div class="wrap">
-    <div class="sec-tag reveal">08 — The fix</div>
-    <h2 class="reveal">One paragraph of instruction <em>nearly erases</em> it.</h2>
-    <p class="lead reveal">We don't just diagnose. A “provenance-disciplined” consolidation prompt — <i>record only what was stated; mark inferences as inferred; omit when unsure</i> — cuts collapse by 60–97%.</p>
-    <div class="chartbox reveal d1">
-      <h3>Baseline vs. provenance-disciplined prompt</h3>
-      <canvas id="mit" height="300"></canvas>
-      <div class="chartcap">Paired on identical sessions. Reductions significant at McNemar <span class="mono">p ≤ 0.0034</span> for all three models.</div>
-    </div>
-
-    <h3 class="reveal">“But did it just write less?”</h3>
-    <p class="reveal">The natural worry: maybe the disciplined prompt cut inventions only by writing fewer notes — dropping real facts too. So we measured <b>stated-fact recall</b>: of the things the user genuinely said, how many survive in the notes?</p>
-    <div class="chartbox reveal d1">
-      <h3>Stated-fact recall — baseline vs disciplined</h3>
-      <canvas id="rec" height="260"></canvas>
-      <div class="chartcap">Recall stays within ~3 points (every paired-difference confidence interval includes zero) while collapse drops 60–97%. The fix removes <span class="hl-good">inventions</span>, not <span class="hl-good">facts</span>. The confound is closed.</div>
-    </div>
-  </div>
-</section>
-
-<!-- NOVELTY -->
-<section>
-  <div class="wrap">
-    <div class="sec-tag reveal">09 — Is it new?</div>
-    <h2 class="reveal">We tried hard to find the paper that kills this.</h2>
-    <p class="lead reveal">An adversarial, multi-agent literature sweep — 100+ search agents, ~190 sources across ACL, NeurIPS, ICLR, arXiv — looked for prior work that already does this. Every nearby paper is cleanly differentiated.</p>
-    <div class="verdict-banner reveal d1">
-      <div class="v">UNIQUE.</div>
-      <p>No published or preprint work measures write-time commission of unstated facts <b>as a function of model capability across families</b> in self-authored persistent memory. The one paper that even shares the term proposes a fix — without ever measuring the problem.</p>
-    </div>
-    <div class="grid g2" style="margin-top:24px">
-      <div class="rw reveal d1"><div class="id">arXiv:2605.25869 · concurrent</div><h4>MemIR — typed-memory fix</h4><p>Coins “provenance-role collapse” and proposes an architectural fix. But reports <b>no baseline rate</b> and <b>no capability scaling</b>. It fixes a problem nobody had measured — we measure it.</p><div class="verdict">complementary, not scooping</div></div>
-      <div class="rw reveal d2"><div class="id">arXiv:2502.09597</div><h4>PrefEval</h4><p>Tests whether models <i>follow stated</i> preferences — recall, the opposite of inventing unstated ones.</p><div class="verdict">different failure (omission)</div></div>
-      <div class="rw reveal d1"><div class="id">arXiv:2603.17781</div><h4>Facts as First-Class Objects</h4><p>Targets compaction <i>loss</i> — forgetting facts, not fabricating them.</p><div class="verdict">different failure (omission)</div></div>
-      <div class="rw reveal d2"><div class="id">2306.09479 · 2109.07958</div><h4>Inverse scaling · TruthfulQA</h4><p>Larger-is-worse on prompted <i>QA truthfulness</i> — a different setting; never studied in agent memory writing.</p><div class="verdict">precedent, not overlap</div></div>
-    </div>
-  </div>
-</section>
-
-<!-- LIMITATIONS -->
-<section class="paper">
-  <div class="wrap">
-    <div class="sec-tag reveal">10 — What we're not claiming</div>
-    <h2 class="reveal">The honest fine print.</h2>
-    <div class="limit reveal"><b>Magnitude is prompt-sensitive.</b> Absolute rates shift with the exact consolidation wording (one model fell to 2.4% under one phrasing). The capability <i>ordering</i> holds across phrasings; we report per-prompt, never a single headline number in the paper.</div>
-    <div class="limit reveal d1"><b>A threshold, not a smooth law.</b> Within-family frontier steps are directional but not individually significant. The robust statement is small-base vs. capable.</div>
-    <div class="limit reveal d2"><b>Judge-based labels.</b> Validated by cross-family agreement (κ 0.63–0.68); gold human labels are still being collected.</div>
-    <div class="limit reveal d3"><b>Controlled, synthetic sessions.</b> 30 hand-built transcripts. Scaling to naturalistic, long-horizon deployments is the next step.</div>
-  </div>
-</section>
-
-<!-- CONCLUSION -->
-<section>
-  <div class="wrap">
-    <div class="sec-tag reveal">11 — Why it matters</div>
-    <blockquote class="reveal">As we hand agents <span class="hl">durable memory</span> and more capability, they don't just remember better — they <span class="hl">remember things we never said</span>, and write them down as truth.</blockquote>
-    <p class="lead reveal d1" style="margin-top:30px">Provenance collapse is, to our knowledge, the first LLM-agent memory failure shown to <b>intensify with capability</b> rather than fade. It is measurable, cross-vendor, present at the frontier — and substantially fixable with a single prompt. That is a complete arc: a novel phenomenon, a validated metric, a capability law, and a working mitigation.</p>
-  </div>
-</section>
-
-<footer>
-  <div class="wrap">
-    <div class="mono"><b style="color:#fff; font-family:var(--disp); font-size:18px">Reproducibility</b></div>
-    <div class="repro">
-      <div><b>Capability law</b> — provenance_collapse_full · run provfull-1781157672</div>
-      <div><b>Frontier (GPT-5 / Mistral)</b> — provenance_collapse_frontier · provfront-1781174524</div>
-      <div><b>Judge validation</b> — judge_validation · κ 0.63–0.68</div>
-      <div><b>Mitigation</b> — mitigation_experiment · run mitig-1781174572</div>
-      <div><b>Recall confound</b> — recall_check · run recall-1781194661</div>
-      <div><b>Novelty</b> — adversarial deep-research · verdict UNIQUE</div>
-    </div>
-    <div class="mono" style="margin-top:30px; color:var(--muted2)">Held-out cross-family judges · paired tests &amp; raw counts · Wilson 95% CIs · Fisher / McNemar exact · all claims auditable in JSONL traces.<br>VelaOps Research · prepared for academic review · 2026.</div>
-  </div>
-</footer>
+  <div class="mono" style="margin-top:28px; color:var(--muted2)">Held-out cross-family judges · paired tests &amp; raw counts · Wilson 95% CIs · Fisher / McNemar exact · all claims auditable in JSONL traces.<br>VelaOps Research · prepared for academic review · 2026.</div>
+</div></footer>
 
 <script>
-/* progress bar */
 const prog=document.getElementById('prog');
 addEventListener('scroll',()=>{const h=document.documentElement;const s=h.scrollTop/(h.scrollHeight-h.clientHeight);prog.style.width=(s*100)+'%'},{passive:true});
-
-/* reveal on scroll */
-const io=new IntersectionObserver((es)=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}})},{threshold:.12});
+const io=new IntersectionObserver((es)=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}})},{threshold:.1});
 document.querySelectorAll('.reveal:not(.in)').forEach(el=>io.observe(el));
-
-/* count-up */
-function countUp(el){
-  const target=parseFloat(el.dataset.count), suf=el.dataset.suffix||'', dur=1400, t0=performance.now();
-  function step(t){const p=Math.min((t-t0)/dur,1); const e=1-Math.pow(1-p,3);
-    el.textContent=(target*e).toFixed(1)+suf; if(p<1)requestAnimationFrame(step);}
-  requestAnimationFrame(step);
-}
+function countUp(el){const t=parseFloat(el.dataset.count),s=el.dataset.suffix||'',d=1400,t0=performance.now();
+  function step(n){const p=Math.min((n-t0)/d,1),e=1-Math.pow(1-p,3);el.textContent=(t*e).toFixed(1)+s;if(p<1)requestAnimationFrame(step)}requestAnimationFrame(step)}
 const cio=new IntersectionObserver((es)=>{es.forEach(e=>{if(e.isIntersecting){countUp(e.target);cio.unobserve(e.target)}})},{threshold:.6});
 document.querySelectorAll('[data-count]').forEach(el=>cio.observe(el));
 
-/* ---- the collapse demo ---- */
 const faithful="User's deploy failed last night. User says it's basically the same issue as before. ";
 const invented="The user's deployment pipeline is unreliable and has recurring infrastructure problems.";
-const tagHTML=' <span class="tag" id="invtag">not stated</span>';
-const noteEl=document.getElementById('noteOut');
-let demoTimers=[];
-function clearDemo(){demoTimers.forEach(t=>clearTimeout(t));demoTimers=[];noteEl.innerHTML='';}
-function runDemo(){
-  clearDemo(); let i=0;
-  // type faithful part
-  function typeFaithful(){
-    if(i<=faithful.length){noteEl.innerHTML=faithful.slice(0,i);i++;demoTimers.push(setTimeout(typeFaithful,22));}
-    else{ // pause, then type invented in red
-      let j=0; const base=faithful;
-      function typeInv(){
-        if(j<=invented.length){
-          noteEl.innerHTML=base+'<span class="inv">'+invented.slice(0,j)+'</span>';j++;
-          demoTimers.push(setTimeout(typeInv,26));
-        } else {
-          noteEl.innerHTML=base+'<span class="inv">'+invented+'</span>'+tagHTML;
-          demoTimers.push(setTimeout(()=>{const t=document.getElementById('invtag');if(t)t.classList.add('show')},250));
-        }
-      }
-      demoTimers.push(setTimeout(typeInv,520));
-    }
-  }
-  typeFaithful();
-}
-const demoIO=new IntersectionObserver((es)=>{es.forEach(e=>{if(e.isIntersecting){runDemo();demoIO.unobserve(e.target)}})},{threshold:.5});
-demoIO.observe(noteEl);
-document.getElementById('replayBtn').addEventListener('click',runDemo);
+const noteEl=document.getElementById('noteOut');let dt=[];
+function clr(){dt.forEach(t=>clearTimeout(t));dt=[];noteEl.innerHTML=''}
+function runDemo(){clr();let i=0;
+  (function tf(){if(i<=faithful.length){noteEl.innerHTML=faithful.slice(0,i);i++;dt.push(setTimeout(tf,22))}
+    else{let j=0;const b=faithful;(function ti(){if(j<=invented.length){noteEl.innerHTML=b+'<span class="inv">'+invented.slice(0,j)+'</span>';j++;dt.push(setTimeout(ti,26))}
+      else{noteEl.innerHTML=b+'<span class="inv">'+invented+'</span> <span class="tag" id="it">not stated</span>';dt.push(setTimeout(()=>{const t=document.getElementById('it');if(t)t.classList.add('show')},250))}})();
+    }})();}
+const dio=new IntersectionObserver((es)=>{es.forEach(e=>{if(e.isIntersecting){runDemo();dio.unobserve(e.target)}})},{threshold:.5});
+if(noteEl)dio.observe(noteEl);
+const rb=document.getElementById('replayBtn');if(rb)rb.addEventListener('click',runDemo);
 
-/* ---- charts ---- */
-Chart.defaults.font.family="'IBM Plex Mono', monospace";
-Chart.defaults.font.size=12;
-function heat(r){ // 0..40 -> teal..amber..coral
-  const x=Math.max(0,Math.min(1,r/40));
-  const c1=[52,194,166],c2=[244,163,42],c3=[255,90,64];
-  let a,b,t; if(x<0.5){a=c1;b=c2;t=x/0.5}else{a=c2;b=c3;t=(x-0.5)/0.5}
-  const m=a.map((v,i)=>Math.round(v+(b[i]-v)*t)); return `rgb(${m[0]},${m[1]},${m[2]})`;
-}
-const ladderData=[
-  {m:'Llama-4 17B',v:'Meta · base',r:7.1,n:'9/127'},
-  {m:'GPT-5-mini',v:'OpenAI',r:22.4,n:'32/143'},
-  {m:'GLM-4.7',v:'Zhipu · reasoning',r:23.3,n:'35/150'},
-  {m:'Llama-3.3 70B',v:'Meta · base',r:23.9,n:'39/163'},
-  {m:'gpt-oss 120B',v:'OpenAI · reasoning',r:23.9,n:'27/113'},
-  {m:'Mistral Large 3',v:'Mistral',r:24.3,n:'42/173'},
-  {m:'DeepSeek V4-flash',v:'DeepSeek',r:25.5,n:'36/141'},
-  {m:'GPT-5',v:'OpenAI · reasoning',r:29.8,n:'37/124'},
-  {m:'DeepSeek V4-pro',v:'DeepSeek',r:30.1,n:'49/163'},
-  {m:'Qwen3-32B',v:'Qwen · reasoning',r:39.8,n:'72/181'},
-];
+Chart.defaults.font.family="'IBM Plex Mono', monospace";Chart.defaults.font.size=12;
+function heat(r){const x=Math.max(0,Math.min(1,r/40));const c1=[52,194,166],c2=[244,163,42],c3=[255,90,64];let a,b,t;if(x<.5){a=c1;b=c2;t=x/.5}else{a=c2;b=c3;t=(x-.5)/.5}const m=a.map((v,i)=>Math.round(v+(b[i]-v)*t));return`rgb(${m[0]},${m[1]},${m[2]})`}
+const ladderData=[{m:'Llama-4 17B',v:'Meta · base',r:7.1,n:'9/127'},{m:'GPT-5-mini',v:'OpenAI',r:22.4,n:'32/143'},{m:'GLM-4.7',v:'Zhipu · reasoning',r:23.3,n:'35/150'},{m:'Llama-3.3 70B',v:'Meta · base',r:23.9,n:'39/163'},{m:'gpt-oss 120B',v:'OpenAI · reasoning',r:23.9,n:'27/113'},{m:'Mistral Large 3',v:'Mistral',r:24.3,n:'42/173'},{m:'DeepSeek V4-flash',v:'DeepSeek',r:25.5,n:'36/141'},{m:'GPT-5',v:'OpenAI · reasoning',r:29.8,n:'37/124'},{m:'DeepSeek V4-pro',v:'DeepSeek',r:30.1,n:'49/163'},{m:'Qwen3-32B',v:'Qwen · reasoning',r:39.8,n:'72/181'}];
 let charts={};
-function makeLadder(){
-  if(charts.l)return;
-  charts.l=new Chart(document.getElementById('ladder'),{
-    type:'bar',
-    data:{labels:ladderData.map(d=>d.m),
-      datasets:[{data:ladderData.map(d=>d.r),backgroundColor:ladderData.map(d=>heat(d.r)),borderRadius:6,barThickness:22}]},
-    options:{indexAxis:'y',responsive:true,animation:{duration:1300,easing:'easeOutQuart'},
-      plugins:{legend:{display:false},tooltip:{callbacks:{
-        title:(it)=>ladderData[it[0].dataIndex].m,
-        label:(it)=>[' '+it.raw+'% collapse',' '+ladderData[it.dataIndex].v,' n='+ladderData[it.dataIndex].n]}}},
-      scales:{x:{grid:{color:'rgba(255,255,255,.06)'},ticks:{color:'#929cb0',callback:v=>v+'%'},max:45,title:{display:true,text:'collapse rate',color:'#929cb0'}},
-        y:{grid:{display:false},ticks:{color:'#cbd3e2'}}}}
-  });
-}
-function makeAmb(){
-  if(charts.a)return;
-  charts.a=new Chart(document.getElementById('amb'),{
-    type:'line',
-    data:{labels:['Low ambiguity','Medium','High'],
-      datasets:[
-        {label:'Llama-4 17B (small)',data:[0,12.8,10.5],borderColor:'#34c2a6',backgroundColor:'#34c2a6',tension:.3,borderWidth:3,pointRadius:5},
-        {label:'DeepSeek V4-pro (frontier)',data:[6.4,41.7,37.5],borderColor:'#f4a32a',backgroundColor:'#f4a32a',tension:.3,borderWidth:3,pointRadius:5},
-        {label:'Qwen3-32B (reasoning)',data:[8.9,44.1,55.9],borderColor:'#ff5a40',backgroundColor:'#ff5a40',tension:.3,borderWidth:3,pointRadius:5},
-      ]},
-    options:{responsive:true,animation:{duration:1200},
-      plugins:{legend:{labels:{color:'#3c352a'}},tooltip:{callbacks:{label:(it)=>' '+it.dataset.label+': '+it.raw+'%'}}},
-      scales:{x:{grid:{color:'rgba(0,0,0,.06)'},ticks:{color:'#7a7060'}},
-        y:{grid:{color:'rgba(0,0,0,.06)'},ticks:{color:'#7a7060',callback:v=>v+'%'},title:{display:true,text:'collapse rate',color:'#7a7060'}}}}
-  });
-}
-function makeMit(){
-  if(charts.m)return;
-  charts.m=new Chart(document.getElementById('mit'),{
-    type:'bar',
-    data:{labels:['Qwen3-32B','Llama-3.3 70B','GPT-5-mini'],
-      datasets:[
-        {label:'Baseline prompt',data:[36.1,24.7,16.5],backgroundColor:'#ff5a40',borderRadius:6,barPercentage:.7},
-        {label:'Provenance-disciplined',data:[1.0,4.7,6.5],backgroundColor:'#34c2a6',borderRadius:6,barPercentage:.7},
-      ]},
-    options:{responsive:true,animation:{duration:1200},
-      plugins:{legend:{labels:{color:'#3c352a'}},tooltip:{callbacks:{label:(it)=>' '+it.dataset.label+': '+it.raw+'%'}}},
-      scales:{x:{grid:{display:false},ticks:{color:'#7a7060'}},
-        y:{grid:{color:'rgba(0,0,0,.06)'},ticks:{color:'#7a7060',callback:v=>v+'%'},title:{display:true,text:'collapse rate',color:'#7a7060'}}}}
-  });
-}
-function makeRec(){
-  if(charts.r)return;
-  charts.r=new Chart(document.getElementById('rec'),{
-    type:'bar',
-    data:{labels:['Qwen3-32B','Llama-3.3 70B','GPT-5-mini'],
-      datasets:[
-        {label:'Baseline recall',data:[99,97,99],backgroundColor:'#caa15f',borderRadius:6,barPercentage:.7},
-        {label:'Disciplined recall',data:[97,94,100],backgroundColor:'#34c2a6',borderRadius:6,barPercentage:.7},
-      ]},
-    options:{responsive:true,animation:{duration:1100},
-      plugins:{legend:{labels:{color:'#3c352a'}},tooltip:{callbacks:{label:(it)=>' '+it.dataset.label+': '+it.raw+'%'}}},
-      scales:{x:{grid:{display:false},ticks:{color:'#7a7060'}},
-        y:{grid:{color:'rgba(0,0,0,.06)'},ticks:{color:'#7a7060',callback:v=>v+'%'},min:60,max:100,title:{display:true,text:'stated-fact recall',color:'#7a7060'}}}}
-  });
-}
-const chartIO=new IntersectionObserver((es)=>{es.forEach(e=>{if(e.isIntersecting){
-  const id=e.target.id;
-  if(id==='ladder')makeLadder(); if(id==='amb')makeAmb(); if(id==='mit')makeMit(); if(id==='rec')makeRec();
-  chartIO.unobserve(e.target);
-}})},{threshold:.3});
+function mkLadder(){if(charts.l)return;charts.l=new Chart(document.getElementById('ladder'),{type:'bar',
+  data:{labels:ladderData.map(d=>d.m),datasets:[{data:ladderData.map(d=>d.r),backgroundColor:ladderData.map(d=>heat(d.r)),borderRadius:6,barThickness:22}]},
+  options:{indexAxis:'y',responsive:true,animation:{duration:1300,easing:'easeOutQuart'},plugins:{legend:{display:false},tooltip:{callbacks:{title:it=>ladderData[it[0].dataIndex].m,label:it=>[' '+it.raw+'% collapse',' '+ladderData[it.dataIndex].v,' n='+ladderData[it.dataIndex].n]}}},
+  scales:{x:{grid:{color:'rgba(255,255,255,.06)'},ticks:{color:'#929cb0',callback:v=>v+'%'},max:45,title:{display:true,text:'collapse rate',color:'#929cb0'}},y:{grid:{display:false},ticks:{color:'#cbd3e2'}}}}})}
+function mkAmb(){if(charts.a)return;charts.a=new Chart(document.getElementById('amb'),{type:'line',
+  data:{labels:['Low ambiguity','Medium','High'],datasets:[
+   {label:'Llama-4 17B (small)',data:[0,12.8,10.5],borderColor:'#34c2a6',backgroundColor:'#34c2a6',tension:.3,borderWidth:3,pointRadius:5},
+   {label:'DeepSeek V4-pro (frontier)',data:[6.4,41.7,37.5],borderColor:'#f4a32a',backgroundColor:'#f4a32a',tension:.3,borderWidth:3,pointRadius:5},
+   {label:'Qwen3-32B (reasoning)',data:[8.9,44.1,55.9],borderColor:'#ff5a40',backgroundColor:'#ff5a40',tension:.3,borderWidth:3,pointRadius:5}]},
+  options:{responsive:true,animation:{duration:1200},plugins:{legend:{labels:{color:'#3c352a'}},tooltip:{callbacks:{label:it=>' '+it.dataset.label+': '+it.raw+'%'}}},
+  scales:{x:{grid:{color:'rgba(0,0,0,.06)'},ticks:{color:'#7a7060'}},y:{grid:{color:'rgba(0,0,0,.06)'},ticks:{color:'#7a7060',callback:v=>v+'%'},title:{display:true,text:'collapse rate',color:'#7a7060'}}}}})}
+function mkMit(){if(charts.m)return;charts.m=new Chart(document.getElementById('mit'),{type:'bar',
+  data:{labels:['Qwen3-32B','Llama-3.3 70B','GPT-5-mini'],datasets:[
+   {label:'Baseline prompt',data:[36.1,24.7,16.5],backgroundColor:'#ff5a40',borderRadius:6,barPercentage:.7},
+   {label:'Provenance-disciplined',data:[1.0,4.7,6.5],backgroundColor:'#34c2a6',borderRadius:6,barPercentage:.7}]},
+  options:{responsive:true,animation:{duration:1200},plugins:{legend:{labels:{color:'#3c352a'}},tooltip:{callbacks:{label:it=>' '+it.dataset.label+': '+it.raw+'%'}}},
+  scales:{x:{grid:{display:false},ticks:{color:'#7a7060'}},y:{grid:{color:'rgba(0,0,0,.06)'},ticks:{color:'#7a7060',callback:v=>v+'%'},title:{display:true,text:'collapse rate',color:'#7a7060'}}}}})}
+function mkRec(){if(charts.r)return;charts.r=new Chart(document.getElementById('rec'),{type:'bar',
+  data:{labels:['Qwen3-32B','Llama-3.3 70B','GPT-5-mini'],datasets:[
+   {label:'Baseline recall',data:[99,97,99],backgroundColor:'#caa15f',borderRadius:6,barPercentage:.7},
+   {label:'Disciplined recall',data:[97,94,100],backgroundColor:'#34c2a6',borderRadius:6,barPercentage:.7}]},
+  options:{responsive:true,animation:{duration:1100},plugins:{legend:{labels:{color:'#3c352a'}},tooltip:{callbacks:{label:it=>' '+it.dataset.label+': '+it.raw+'%'}}},
+  scales:{x:{grid:{display:false},ticks:{color:'#7a7060'}},y:{grid:{color:'rgba(0,0,0,.06)'},ticks:{color:'#7a7060',callback:v=>v+'%'},min:60,max:100,title:{display:true,text:'stated-fact recall',color:'#7a7060'}}}}})}
+const chartIO=new IntersectionObserver((es)=>{es.forEach(e=>{if(e.isIntersecting){const id=e.target.id;
+  if(id==='ladder')mkLadder();if(id==='amb')mkAmb();if(id==='mit')mkMit();if(id==='rec')mkRec();chartIO.unobserve(e.target)}})},{threshold:.3});
 ['ladder','amb','mit','rec'].forEach(id=>{const el=document.getElementById(id);if(el)chartIO.observe(el)});
 </script>
 </body>
