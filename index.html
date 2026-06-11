@@ -196,7 +196,7 @@
 <header class="hero"><div class="wrap">
   <div class="kicker reveal in">A failure that grows as models get smarter</div>
   <h1 class="reveal in d1">Inference<br>as <em>Fact</em>.</h1>
-  <p class="sub reveal in d2">When a capable AI agent writes notes to its own long-term memory, it quietly records <b>guesses as facts the user never said</b> — and the smarter the model, the more it does it. A study across <b>10 models</b> and <b>5 vendors</b>, explained from the beginning.</p>
+  <p class="sub reveal in d2">A smart AI agent writes notes in its own memory. Often it writes down a <b>guess as if it were a fact the user stated</b>. The smarter the model, the more it does this. We tested <b>10 models</b> from <b>5 companies</b>. This page tells the whole story in plain words.</p>
   <div class="heronums reveal in d3">
     <div><div class="n" data-count="7.1" data-suffix="%">0%</div><div class="l">small model · Llama-4 17B</div></div>
     <div><div class="n" data-count="30.1" data-suffix="%">0%</div><div class="l">frontier · DeepSeek V4-pro</div></div>
@@ -215,7 +215,7 @@
   <p class="lead reveal">To understand the problem, it helps to know one new thing about how modern assistants work.</p>
   <p class="drop reveal d1">A few years ago, a chatbot forgot everything the moment a conversation ended. Today's AI <b>agents</b> do not. After each session they <b>write notes to themselves</b> — a plain-text file, often literally called <span class="mono">MEMORY.md</span>, that the model itself authors, re-reads at the start of every future conversation, and rewrites as it learns more. It is the agent's private diary. Whatever ends up in it silently shapes every decision the agent makes for you afterwards.</p>
   <p class="reveal d2">The quiet assumption everyone makes is simple: <b>what the agent writes in that diary is what you actually told it.</b> Our research is about a specific, surprising way that assumption breaks — not by the agent <i>forgetting</i> things, but by the agent <i>adding</i> things you never said, and recording them as fact.</p>
-  <div class="aside reveal d2"><b>Why study this now?</b> Persistent memory is the fastest-growing and least-scrutinised piece of agent infrastructure in 2026 (see <a href="#refs">Park et al. 2023; Packer et al. 2023</a>). The benchmarks that exist measure whether agents <i>remember</i> enough — almost none ask whether what they write is <i>true to the source</i>.</p>
+  <div class="aside reveal d2"><b>Why study this now?</b> Persistent memory is the fastest-growing and least-scrutinised piece of agent infrastructure in 2026 (see <a href="#refs">Park et al. 2023; Packer et al. 2023</a>). The benchmarks that exist measure whether agents <i>remember</i> enough — almost none ask whether what they write is <i>true to the source</i>.</div>
 </div></section>
 <hr class="div">
 
@@ -223,7 +223,7 @@
   <div class="sec-tag reveal">02 — The dead end that pointed the way</div>
   <h2 class="reveal">We started on a different problem — and it failed.</h2>
   <p class="lead reveal">Every result here is the survivor of a project that first hit a wall. The wall is what told us where to look.</p>
-  <p class="drop reveal d1">Our original idea, which we nicknamed <b>“Soul Drift,”</b> was that an agent's memory slowly <i>distorts</i> each time it is re-summarised — like a photocopy of a photocopy. In small and mid-tier models, it did. But the moment we ran the identical test on a frontier model (DeepSeek V4-pro), the drift was <b>flat zero</b>. The effect got <i>weaker</i> as models got stronger.</p>
+  <p class="drop reveal d1">Our first idea was simple. We thought an agent's memory slowly changes meaning each time the model rewrites it — a little more lost on every pass. In small and mid-size models, this happened. Then we ran the same test on a top model, DeepSeek V4-pro. The change was <b>zero</b>. The problem got <i>smaller</i> as the model got better, not larger.</p>
   <p class="reveal d2">That is fatal for a paper. A weakness that <i>shrinks</i> as models improve is a weakness that is already solving itself — a reviewer would rightly ask why anyone should care. So we inverted the entire question, and that inversion is the whole insight:</p>
   <blockquote class="reveal d2">Stop looking for a bug that capability <span class="hl">cures.</span><br>Find the bug that capability <span class="hl">causes.</span></blockquote>
   <p class="reveal d3">The most important failures in AI safety — deception, scheming, over-reasoning — are exactly the ones that <i>require</i> intelligence to commit. A weak model cannot scheme; it is not capable enough. If a memory failure worked the same way, it would survive at the frontier <i>by definition</i>. So we went hunting for one.</p>
@@ -304,9 +304,24 @@
     <div class="role">③ Customer-support agent</div>
     <div class="said"><span class="who">CUSTOMER SAID —</span> “This is the second time I'm asking about the refund.”</div>
     <div class="rec"><span class="who">AGENT RECORDED —</span> Customer is <span class="inv">highly frustrated and at serious risk of churning</span>.<span class="tag">never stated</span></div>
-    <div class="why"><b>Why it's dangerous:</b> that single invented line can route the customer into a different (costlier, or more defensive) treatment track on every future contact — a consequential business decision built on a guess.</div>
+    <div class="why"><b>Why it's dangerous:</b> that one invented line can send the customer down a different, costlier path on every future contact — a real business decision built on a guess.</div>
   </div>
-  <p class="reveal" style="margin-top:26px"><b>The common thread:</b> in all three, the user said something narrow and factual; the agent recorded something broad, evaluative, and unstated — then treated it as ground truth forever after. That is the entire failure, and it compounds with every session.</p>
+
+  <div class="ex reveal d1">
+    <div class="role">④ Study / tutoring assistant</div>
+    <div class="said"><span class="who">STUDENT SAID —</span> “I didn't finish the calculus problem set this week.”</div>
+    <div class="rec"><span class="who">AGENT RECORDED —</span> The student <span class="inv">struggles with calculus and is falling behind in math</span>.<span class="tag">never stated</span></div>
+    <div class="why"><b>Why it's dangerous:</b> the tutor now starts giving easier problems and extra hand-holding on every topic. One missed week, on a busy week, became a permanent label of “weak at math.”</div>
+  </div>
+
+  <div class="ex reveal d1">
+    <div class="role">⑤ Hiring / recruiting assistant</div>
+    <div class="said"><span class="who">RECRUITER SAID —</span> “The candidate asked about remote work in the interview.”</div>
+    <div class="rec"><span class="who">AGENT RECORDED —</span> Candidate is <span class="inv">not willing to come to the office and may not be committed</span>.<span class="tag">never stated</span></div>
+    <div class="why"><b>Why it's dangerous:</b> a normal question becomes a black mark in the candidate's file that every later reviewer reads as fact. This is exactly where invented memory can cause real, unfair harm to a person.</div>
+  </div>
+
+  <p class="reveal" style="margin-top:26px"><b>The common thread:</b> in every case the user said something small and factual. The agent wrote down something big, judgmental, and unstated. Then it treated that guess as the truth from then on. That is the whole failure — and it builds up over time.</p>
 </div></section>
 <hr class="div">
 
@@ -479,19 +494,30 @@
     <div class="refgroup"><h4>Agent memory &amp; benchmarks</h4>
       <div class="ref">Park, O'Brien, Cai, Morris, Liang, Bernstein. <i>Generative Agents: Interactive Simulacra of Human Behavior.</i> <span class="v">UIST 2023.</span> <a href="https://arxiv.org/abs/2304.03442">arXiv:2304.03442</a></div>
       <div class="ref">Packer et al. <i>MemGPT: Towards LLMs as Operating Systems.</i> <span class="v">2023.</span> <a href="https://arxiv.org/abs/2310.08560">arXiv:2310.08560</a></div>
+      <div class="ref">Zhong, Guo, Gao, Ye, Wang. <i>MemoryBank: Enhancing Large Language Models with Long-Term Memory.</i> <span class="v">2023.</span> <a href="https://arxiv.org/abs/2305.10250">arXiv:2305.10250</a></div>
       <div class="ref">Maharana et al. <i>Evaluating Very Long-Term Conversational Memory of LLM Agents (LoCoMo).</i> <span class="v">ACL 2024.</span> <a href="https://arxiv.org/abs/2402.17753">arXiv:2402.17753</a></div>
       <div class="ref">Wu et al. <i>LongMemEval: Benchmarking Chat Assistants on Long-Term Interactive Memory.</i> <span class="v">ICLR 2025.</span> <a href="https://arxiv.org/abs/2410.10813">arXiv:2410.10813</a></div>
+      <div class="ref">Hu et al. <i>MemoryAgentBench: Evaluating Memory in LLM Agents.</i> <span class="v">2025.</span> <a href="https://arxiv.org/abs/2507.05257">arXiv:2507.05257</a></div>
       <div class="ref">Zhang et al. <i>PrefEval: Evaluating Personalized Preference Following.</i> <span class="v">2025.</span> <a href="https://arxiv.org/abs/2502.09597">arXiv:2502.09597</a></div>
       <div class="ref">Jin et al. <i>Mitigating Provenance-Role Collapse via Typed Memory (MemIR).</i> <span class="v">2026 · concurrent.</span> <a href="https://arxiv.org/abs/2605.25869">arXiv:2605.25869</a></div>
     </div>
-    <div class="refgroup"><h4>Faithfulness, hallucination &amp; sycophancy</h4>
-      <div class="ref">Turpin, Michael, Perez, Bowman. <i>Language Models Don't Always Say What They Think: Unfaithful Explanations in CoT Prompting.</i> <span class="v">NeurIPS 2023.</span> <a href="https://arxiv.org/abs/2305.04388">arXiv:2305.04388</a></div>
-      <div class="ref">Sharma et al. <i>Towards Understanding Sycophancy in Language Models.</i> <span class="v">ICLR 2024.</span> <a href="https://arxiv.org/abs/2310.13548">arXiv:2310.13548</a></div>
+    <div class="refgroup"><h4>Faithfulness &amp; hallucination</h4>
+      <div class="ref">Maynez, Narayan, Bohnet, McDonald. <i>On Faithfulness and Factuality in Abstractive Summarization.</i> <span class="v">ACL 2020.</span> <a href="https://arxiv.org/abs/2005.00661">arXiv:2005.00661</a></div>
+      <div class="ref">Ji et al. <i>Survey of Hallucination in Natural Language Generation.</i> <span class="v">ACM Computing Surveys, 2023.</span> <a href="https://arxiv.org/abs/2202.03629">arXiv:2202.03629</a></div>
+      <div class="ref">Huang et al. <i>A Survey on Hallucination in Large Language Models.</i> <span class="v">2023.</span> <a href="https://arxiv.org/abs/2311.05232">arXiv:2311.05232</a></div>
+      <div class="ref">Turpin, Michael, Perez, Bowman. <i>Language Models Don't Always Say What They Think.</i> <span class="v">NeurIPS 2023.</span> <a href="https://arxiv.org/abs/2305.04388">arXiv:2305.04388</a></div>
       <div class="ref">Lin, Hilton, Evans. <i>TruthfulQA: Measuring How Models Mimic Human Falsehoods.</i> <span class="v">ACL 2022.</span> <a href="https://arxiv.org/abs/2109.07958">arXiv:2109.07958</a></div>
     </div>
-    <div class="refgroup"><h4>Capability-dependent failure</h4>
+    <div class="refgroup"><h4>Failures that grow with capability</h4>
       <div class="ref">McKenzie et al. <i>Inverse Scaling: When Bigger Isn't Better.</i> <span class="v">TMLR 2023.</span> <a href="https://arxiv.org/abs/2306.09479">arXiv:2306.09479</a></div>
+      <div class="ref">Perez et al. <i>Discovering Language Model Behaviors with Model-Written Evaluations.</i> <span class="v">2022.</span> <a href="https://arxiv.org/abs/2212.09251">arXiv:2212.09251</a></div>
+      <div class="ref">Sharma et al. <i>Towards Understanding Sycophancy in Language Models.</i> <span class="v">ICLR 2024.</span> <a href="https://arxiv.org/abs/2310.13548">arXiv:2310.13548</a></div>
       <div class="ref">Greenblatt et al. <i>Alignment Faking in Large Language Models.</i> <span class="v">2024.</span> <a href="https://arxiv.org/abs/2412.14093">arXiv:2412.14093</a></div>
+      <div class="ref">Meinke et al. <i>Frontier Models are Capable of In-Context Scheming.</i> <span class="v">Apollo, 2024.</span> <a href="https://arxiv.org/abs/2412.04984">arXiv:2412.04984</a></div>
+      <div class="ref">Laine et al. <i>Situational Awareness Dataset (SAD).</i> <span class="v">2024.</span> <a href="https://arxiv.org/abs/2407.04694">arXiv:2407.04694</a></div>
+    </div>
+    <div class="refgroup"><h4>Evaluation methodology</h4>
+      <div class="ref">Zheng et al. <i>Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena.</i> <span class="v">NeurIPS 2023 (D&amp;B).</span> <a href="https://arxiv.org/abs/2306.05685">arXiv:2306.05685</a></div>
     </div>
   </div>
 </div></section>
@@ -509,9 +535,11 @@
       <h4><span class="s">1</span>Introduction</h4>
       <p>Persistent memory is becoming standard agent infrastructure (Park et al., 2023; Packer et al., 2023): assistants summarise each session into durable notes that condition future behaviour. The implicit assumption is that what the agent writes is what it was told. We show this fails systematically, and worse in more capable models. We define <i>provenance collapse</i> as writing, into memory, a claim not entailed by the session, as if stated fact (<span class="figref">Figure 1</span>). Contributions: (i) the phenomenon and a validated metric; (ii) a capability-scaling law across 10 models and 5 vendors; (iii) a prompt-level mitigation.</p>
       <h4><span class="s">2</span>Related Work</h4>
-      <p>Concurrent work (Jin et al., 2026) names “provenance-role collapse” and proposes a typed-memory architecture, but reports no baseline rate and no capability scaling. Memory benchmarks — LoCoMo (Maharana et al., 2024), LongMemEval (Wu et al., 2025) — measure recall, not write-time fabrication. PrefEval (2025) measures adherence to stated preferences, the converse. Inverse scaling (McKenzie et al., 2023) and TruthfulQA (Lin et al., 2022) document larger-is-worse on prompted QA truthfulness; CoT unfaithfulness (Turpin et al., 2023) and sycophancy (Sharma et al., 2024) concern reply-level behaviour, not persistent self-authored artifacts.</p>
+      <p><b>Agent memory.</b> Systems that give agents long-term memory are now common (Park et al., 2023; Packer et al., 2023; Zhong et al., 2023). Benchmarks for them — LoCoMo (Maharana et al., 2024), LongMemEval (Wu et al., 2025), MemoryAgentBench (Hu et al., 2025) — test whether agents <i>recall</i> stated information, not whether what they <i>write</i> is faithful to the source. PrefEval (2025) tests following stated preferences, the converse of inventing unstated ones. Concurrent work (Jin et al., 2026) names “provenance-role collapse” and proposes a typed-memory fix, but reports no baseline rate and no capability scaling.</p>
+      <p><b>Faithfulness and hallucination.</b> Unfaithful generation is well studied for summarization (Maynez et al., 2020) and broadly (Ji et al., 2023; Huang et al., 2023), but at the level of a single reply, not a model's persistent self-authored memory. CoT unfaithfulness (Turpin et al., 2023) and sycophancy (Sharma et al., 2024) likewise concern replies, not durable notes.</p>
+      <p><b>Failures that grow with capability.</b> Inverse scaling (McKenzie et al., 2023), model-written evaluations (Perez et al., 2022), and TruthfulQA (Lin et al., 2022) show larger models can do worse on truthfulness in prompted QA. Our setting — write-time commission in self-authored memory — is new, and to our knowledge the first such failure measured across capability and vendors.</p>
       <h4><span class="s">3</span>Method</h4>
-      <p>We construct 30 sessions at three ambiguity levels. Each model consolidates each session into memory; a held-out judge from a different family decomposes each note into atomic claims and labels them entailed / unsupported / contradicted (<span class="figref">Figure 3</span>). Collapse rate = unsupported-and-unhedged ÷ total claims. Controls: ≥30 claims/cell, paired tests, prompt-paraphrase arm, cross-family judge (κ 0.63–0.68).</p>
+      <p>We construct 30 sessions at three ambiguity levels. Each model consolidates each session into memory; a held-out LLM judge from a different model family — an LLM-as-judge protocol (Zheng et al., 2023) — decomposes each note into atomic claims and labels them entailed / unsupported / contradicted (<span class="figref">Figure 3</span>). Collapse rate = unsupported-and-unhedged ÷ total claims. Controls: ≥30 claims per cell, paired tests, a prompt-paraphrase arm, and a cross-family judge validated by inter-judge agreement (κ 0.63–0.68).</p>
       <h4><span class="s">4</span>Results</h4>
       <p>Collapse rises from 7.1% (Llama-4-17B) to 22–40% across nine larger/frontier/reasoning models, every contrast Fisher p ≤ 0.0003 (<span class="figref">Table 1</span>, <span class="figref">Figure 4</span>). It persists at the frontier (GPT-5 29.8%, V4-pro 30.1%) and grows with ambiguity (<span class="figref">Figure 5</span>): Qwen3-32B rises 8.9% → 44.1% → 55.9% from low to high.</p>
       <table class="acltable">
