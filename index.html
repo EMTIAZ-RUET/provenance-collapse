@@ -58,6 +58,7 @@
   figure .frame{border:1px solid var(--rule); border-radius:10px; background:var(--bg); padding:22px 20px 12px; overflow:hidden}
   figure.plain .frame{border:0; padding:0; background:transparent}
   figure svg{width:100%; height:auto; display:block}
+  figure img{width:100%; height:auto; display:block; border-radius:6px}
   figcaption{font-size:15.5px; color:var(--soft); font-style:italic; line-height:1.55; margin-top:14px; text-align:left; max-width:var(--col); margin-left:auto; margin-right:auto}
   figcaption b{font-style:normal; font-family:var(--mono); font-size:11.5px; letter-spacing:.05em; text-transform:uppercase; color:var(--accent); margin-right:7px}
 
@@ -188,6 +189,11 @@
 </div></div>
 
 <article>
+
+<!-- HERO ILLUSTRATION -->
+<figure class="wide" style="margin-top:18px"><div class="frame" style="padding:10px">
+  <img src="images/hero.png" alt="A person says a small remark; an AI robot writes a large MEMORY notebook in which one line, tagged 'never said', was invented." loading="eager">
+</div><figcaption><b>The problem in one picture.</b> A user says one small thing (the tiny squiggle). The agent writes several confident lines into its MEMORY notebook — and one of them, marked here in red, was never said at all.</figcaption></figure>
 
 <!-- INTRO -->
 <div class="col">
@@ -416,6 +422,9 @@
   <h3>Why it happens: give it a gap, and it fills it</h3>
   <p>Inside every model, invention is near-zero when the user states things plainly, and rises sharply when the message is vague. That is the signature of gap-filling — the model invents most when there is most to guess.</p>
 </div>
+<figure class="wide"><div class="frame" style="padding:10px">
+  <img src="images/gapfill.png" alt="Two panels: (a) a small model looks at a puzzle and leaves the missing piece out; (b) a capable model pushes its own dark pieces into the gaps." loading="lazy">
+</div><figcaption><b>The mechanism, as a picture.</b> Faced with missing information: (a) a small model leaves the gap alone; (b) a capable model fills it with pieces of its own making (dark). Filling gaps is exactly what makes capable models helpful in conversation — and exactly what corrupts their memory when they write it down as fact.</figcaption></figure>
 <figure class="wide"><div class="frame"><div class="chartwrap">
   <h4>Figure 5 · invention rate by how vague the input is</h4>
   <canvas id="amb" height="290"></canvas>
