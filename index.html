@@ -519,7 +519,7 @@
 
 <!-- THE PAPER -->
 <div class="col"><h2>The paper</h2>
-  <p>The working ACL submission, in its own format.</p></div>
+  <p>For readers who want the formal version: below is the working ACL submission, abridged to its four core sections — the abstract, the introduction, the related work (with venue-labelled citations), and the results. Everything above on this page is the plain-language telling of exactly these sections.</p></div>
 <figure class="wide" style="margin-top:8px"><div class="aclpaper">
   <div class="pt">Inference as Fact: Capability-Scaled Provenance Collapse in Self-Authored Agent Memory</div>
   <div class="pa">VelaOps Research · <span class="aff">working draft · target ACL 2027 (main)</span></div>
@@ -536,17 +536,8 @@
     <p><b>Failures that scale with capability.</b> A small literature documents larger-is-worse behaviour: inverse scaling on certain tasks (McKenzie et al., TMLR 2023), and model-written evaluations showing sycophancy and inverse-scaling-under-RLHF that grow with size (Perez et al., Findings of ACL 2023; Sharma et al., ICLR 2024). These concern prompted question-answering and reply-level behaviour. To our knowledge, no prior work measures a commission failure in <i>self-authored persistent memory</i> as a function of capability across model families.</p>
     <p><b>Evaluation methodology.</b> We adopt an LLM-as-judge protocol (Zheng et al., NeurIPS 2023) and address its known circularity risk through cross-family judges and inter-judge agreement (§5.4).</p>
 
-    <h5><span class="s">3</span>Provenance Collapse: Definition</h5>
-    <p>Let a session transcript <i>T</i> be consolidated by an agent into memory notes <i>N</i>. We decompose <i>N</i> into atomic claims and label each claim against <i>T</i> as <b>entailed</b> (stated or unambiguously implied), <b>unsupported</b> (an inference, generalization, or embellishment not present in <i>T</i>), or <b>contradicted</b>. A claim is <i>hedged</i> if it carries an explicit uncertainty marker.</p>
-    <p>A claim is a <b>collapse</b> when it is unsupported <i>and</i> unhedged — an inference asserted as flat fact. The model's <b>collapse rate</b> is the number of collapsed claims divided by total claims. This isolates <i>commission</i> (inventing content), as opposed to <i>omission</i> (dropping content), which existing benchmarks already target. Pure task restatements (“remind me to X”) are excluded.</p>
-
-    <h5><span class="s">4</span>Experimental Setup</h5>
-    <p><b>Sessions.</b> We construct 30 transcripts at three ambiguity levels (10 each): <i>low</i> (facts stated outright), <i>medium</i> (plausible gaps that invite inference), and <i>high</i> (vague, emotional input with strong pull to embellish). Ambiguity is the lever that should drive gap-filling.</p>
-    <p><b>Models.</b> Ten models spanning five vendors and a wide capability range: Meta Llama-4-17B and Llama-3.3-70B; Qwen3-32B; OpenAI gpt-oss-120B, GPT-5-mini, GPT-5; Zhipu GLM-4.7; DeepSeek V4-flash and V4-pro; Mistral Large 3. Each model consolidates all 30 sessions into memory (<span class="fr">Figure 3</span>).</p>
-    <p><b>Judging.</b> A held-out judge from a <i>different model family</i> than the agent decomposes and labels every claim, so no model grades its own output. <b>Controls.</b> ≥30 claims per condition (avoiding small-sample quantization); paired tests with raw counts; a second consolidation-prompt phrasing to test wording-sensitivity; Wilson 95% intervals; Fisher one-sided tests for capability contrasts and McNemar for paired mitigation contrasts.</p>
-
-    <h5><span class="s">5</span>Results</h5>
-    <p><b>5.1 The capability-scaling law.</b> Collapse rises from 7.1% (Llama-4-17B) to 22–40% across the nine larger/frontier/reasoning models, every contrast significant at Fisher one-sided p ≤ 0.0003 (<span class="fr">Table 1</span>, <span class="fr">Figure 4</span>). It holds across all five vendors and <i>persists at the frontier</i>: GPT-5 (29.8%) and DeepSeek-V4-pro (30.1%) are among the worst.</p>
+    <h5><span class="s">3</span>Results</h5>
+    <p><b>3.1 The capability-scaling law.</b> Each of ten models (five vendors) consolidates the same 30 sessions into memory; a held-out judge from a different model family labels every written claim against the transcript, and a claim is a <i>collapse</i> when it is unsupported and unhedged. Collapse rises from 7.1% (Llama-4-17B) to 22–40% across the nine larger/frontier/reasoning models, every contrast significant at Fisher one-sided p ≤ 0.0003 (<span class="fr">Table 1</span>, <span class="fr">Figure 4</span>). It holds across all five vendors and <i>persists at the frontier</i>: GPT-5 (29.8%) and DeepSeek-V4-pro (30.1%) are among the worst.</p>
     <table class="acltbl"><tr><th>model</th><th>vendor</th><th>collapse</th><th>vs 17B</th></tr>
       <tr><td>Llama-4 17B</td><td>Meta</td><td>7.1%</td><td>—</td></tr>
       <tr><td>GPT-5-mini</td><td>OpenAI</td><td>22.4%</td><td>.0003</td></tr>
@@ -559,24 +550,12 @@
       <tr><td>V4-pro</td><td>DeepSeek</td><td>30.1%</td><td>&lt;.0001</td></tr>
       <tr><td>Qwen3-32B</td><td>Qwen</td><td>39.8%</td><td>&lt;.0001</td></tr></table>
     <p style="font-size:10px;color:#777">Table 1: Collapse rate (v1 prompt) and Fisher one-sided p vs. the 17B anchor.</p>
-    <p><b>5.2 Ambiguity gradient.</b> Within every model, collapse is near-zero on low-ambiguity input and rises sharply on vague input (<span class="fr">Figure 5</span>): Qwen3-32B goes 8.9% → 44.1% → 55.9% from low to high. The effect tracks how much there is to infer — the signature of gap-filling.</p>
-    <p><b>5.3 Reasoning vs. size (hypothesis).</b> The single worst model is a reasoning model (Qwen3-32B, 39.8%), but two other reasoning models sit with the non-reasoning frontier (gpt-oss-120B 23.9%, GLM-4.7 23.3%). We therefore present “reasoning amplifies collapse” as a hypothesis, not a conclusion.</p>
-    <p><b>5.4 Metric validity.</b> Re-labelling a random 40-claim sample with two independent cross-family judges gives raw agreement 87.5% and Cohen's κ = 0.63 and 0.68 (both “substantial”); agreement with a 3-judge majority is κ = 0.87. Human gold labels are in progress.</p>
-    <p><b>5.5 Prompt sensitivity.</b> Absolute rates shift with consolidation wording (gpt-oss-120B falls to 2.4% under one phrasing), but the capability ordering is preserved; we report per-prompt and treat suppressibility as a mitigation cue (§6).</p>
-
-    <h5><span class="s">6</span>Mitigation</h5>
-    <p>A single instruction at consolidation — <i>record only what was stated; mark any inference as inferred; omit when unsure</i> — sharply reduces collapse: Qwen3-32B 36.1→1.0%, Llama-3.3-70B 24.7→4.7%, GPT-5-mini 16.5→6.5% (paired, McNemar p ≤ 0.0034; <span class="fr">Figure 6</span>). To rule out a “wrote-less” confound, we measure stated-fact recall against a gold per-transcript fact set: recall stays within ~3 points of baseline (every paired-difference CI includes zero; <span class="fr">Figure 7</span>). The fix removes inventions, not facts.</p>
-
-    <h5><span class="s">7</span>Discussion</h5>
-    <p>The mechanism is the model's own helpfulness. In a live reply, inferring beyond the literal input is desirable; written into permanent memory as fact, the same inference becomes corruption that compounds, because every later session reads it as ground truth. This explains why collapse grows with capability — a stronger model infers more — and why it persists at the frontier rather than being trained away. It also clarifies the relationship to MemIR (Jin et al., 2026): they propose an architectural fix for the same phenomenon; we provide the first measurement of its prevalence and capability dependence, plus a lightweight prompt-level alternative. The deployment implication is direct: any agent that writes durable memory should separate stated facts from inferences at write time, by architecture or by prompt.</p>
-
-    <h5><span class="s">8</span>Limitations</h5>
-    <p>Magnitude is prompt-sensitive; we report per-prompt and rely on the (robust) capability ordering. The scaling is a threshold — within-family frontier steps (e.g., flash→pro, gpt5mini→gpt5) are directional but not individually significant. Labels are judge-based and validated by agreement; gold human labels are still being collected. Sessions are controlled and synthetic; naturalistic, long-horizon multi-session deployments are future work.</p>
-
-    <h5><span class="s">9</span>Conclusion</h5>
-    <p>Provenance collapse is a measurable, cross-vendor failure in which capable LLM agents persist their own inferences as user-stated fact, at rates of one-in-four to two-in-five claims, growing with capability and unfixed at the frontier — yet largely correctable with a single prompt. To our knowledge it is the first agent-memory failure shown to intensify with capability rather than fade. We release the auditing harness, the 30-session suite, and the 10-model measurements.</p>
+    <p><b>3.2 Ambiguity gradient.</b> Within every model, collapse is near-zero on low-ambiguity input and rises sharply on vague input (<span class="fr">Figure 5</span>): Qwen3-32B goes 8.9% → 44.1% → 55.9% from low to high. The effect tracks how much there is to infer — the signature of gap-filling.</p>
+    <p><b>3.3 Reasoning vs. size (hypothesis).</b> The single worst model is a reasoning model (Qwen3-32B, 39.8%), but two other reasoning models sit with the non-reasoning frontier (gpt-oss-120B 23.9%, GLM-4.7 23.3%). We therefore present “reasoning amplifies collapse” as a hypothesis, not a conclusion.</p>
+    <p><b>3.4 Metric validity.</b> Re-labelling a random 40-claim sample with two independent cross-family judges gives raw agreement 87.5% and Cohen's κ = 0.63 and 0.68 (both “substantial”); agreement with a 3-judge majority is κ = 0.87. Human gold labels are in progress.</p>
+    <p><b>3.5 Prompt sensitivity and mitigation preview.</b> Absolute rates shift with consolidation wording (gpt-oss-120B falls to 2.4% under one phrasing), but the capability ordering is preserved; we report per-prompt. The suppressibility itself points to the remedy: a provenance-disciplined instruction cuts collapse 60–97% while preserving stated-fact recall (full mitigation study in the complete draft).</p>
   </div>
-</div><figcaption><b>The 8-page working draft</b> in its own format; the full LaTeX source is PAPER_DRAFT.md in the project repository. Citations carry venues (ACL, NeurIPS, ICLR, AAAI, UIST, TMLR, ACM CSUR/TOIS); see References above.</figcaption></figure>
+</div><figcaption><b>Abridged draft — abstract, introduction, related work, and results only.</b> The complete working draft (method, mitigation, discussion, limitations) is PAPER_DRAFT.md in the project repository. Citations carry venues (ACL, NeurIPS, ICLR, AAAI, UIST, TMLR, ACM CSUR/TOIS); see References below.</figcaption></figure>
 
 <!-- LIMITATIONS -->
 <div class="col">
