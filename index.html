@@ -184,7 +184,7 @@
 <div class="titleblock"><div class="col">
   <div class="eyebrow">A failure that grows as models get smarter</div>
   <h1>Inference as Fact: when an AI agent writes its own memory, it writes down things you never said.</h1>
-  <p class="dek">A smart assistant keeps a private notebook about you. We found that the smarter it is, the more often it fills that notebook with guesses — recorded as facts. Here is the whole story, in plain words.</p>
+  <p class="dek">A smart assistant keeps a private notebook about you. We found that every model we tested — 14 models from 9 companies — fills that notebook with guesses recorded as facts. Most of the guesses are even right. The problem: once written, they are permanent, they resist correction, and they can come back after deletion. Here is the whole story, in plain words.</p>
   <div class="byline"><b>VelaOps Research</b> · prepared for academic review · June 2026 · target venue ACL 2027</div>
 </div></div>
 
@@ -394,7 +394,7 @@
 
 <!-- RESULTS -->
 <div class="col"><h2>What we found</h2>
-  <p>A small model invents on about 7% of the claims it writes. Every larger, frontier, or reasoning model — across five different companies — lands between 22% and 40%.</p></div>
+  <p>Every model invents — 6% to 40% of the claims it writes, across 14 models from 9 companies. What predicts how much is not size but <b>training style and prompt format</b>: an 8-billion-parameter Qwen model invents more than GPT-5-mini, and a fill-in-the-boxes profile template quintuples even the most faithful model’s rate.</p></div>
 <figure class="wide"><div class="frame"><div class="chartwrap">
   <h4>Figure 4 · share of memory claims that are invented, by model</h4>
   <div class="legend"><span><i style="background:#9bb0c2"></i>small base model</span><span><i style="background:#2f4a63"></i>larger / frontier / reasoning</span></div>
@@ -405,7 +405,7 @@
   <h3>A closer look at GPT-5</h3>
   <div class="spot">
     <div class="sh">Spotlight · GPT-5 (OpenAI)</div>
-    <p>GPT-5 — likely the most widely used model on this list — is <b>among the worst offenders: 29.8%</b> of the memory claims it wrote were inventions (37 of 124). It invented on 23% of claims even when the user stated things plainly, rising to 33% on vague input. And inside OpenAI's own family the pattern repeats: the smaller <b>GPT-5-mini invents on 22.4%</b>, the bigger <b>GPT-5 on 29.8%</b>. Bigger model, more invention.</p>
+    <p>GPT-5 — likely the most widely used model on this list — is <b>among the worst offenders: 29.8%</b> of the memory claims it wrote were inventions (37 of 124). It invented on 23% of claims even when the user stated things plainly, rising to 33% on vague input. And inside OpenAI's own family the pattern repeats: the smaller <b>GPT-5-mini invents on 22.4%</b>, the bigger <b>GPT-5 on 29.8%</b>. And in our follow-up tests, even small models of other families invented just as much — no one is safe by being big <i>or</i> small.</p>
   </div>
   <p>This is not abstract. Below is a <b>real file GPT-5 wrote during our experiment</b>, unedited. First, the entire conversation it saw — a parent saying three short sentences:</p>
   <div class="editor">
@@ -467,6 +467,16 @@
   <canvas id="rec" height="250"></canvas>
 </div></div><figcaption><b>Figure 7</b> Recall of genuinely-stated facts stays within about 3 points of normal, while invention drops 60–97%. The fix removes guesses, not facts.</figcaption></figure>
 
+<!-- ROBUSTNESS UPDATE -->
+<div class="col">
+  <h2>Then we attacked our own result</h2>
+  <p>Before trusting the story above, we ran an adversarial robustness program against it — external LLM critics, then experiments designed to kill our own claims. Three things changed, and each made the paper stronger and more honest:</p>
+  <p><b>1. It’s not about size.</b> We added small models and new families: an 8B Qwen invents at 28.7% — more than GPT-5-mini — while a 17B Llama stays at 7%. Training style, not parameter count, sets the rate. No model is immune (GPT-5: 29.8%), and no model is safe by being small.</p>
+  <p><b>2. The guesses are mostly <i>right</i> — which is exactly the problem.</b> Truth-scoring all 378 inventions: <b>69% are true</b> in the scenario’s world, 14% indeterminate, almost none false. The agent isn’t lying; it’s writing correct-sounding inferences with no mark that they are inferences. The wrong ones ride in unlabeled among the right ones.</p>
+  <p><b>3. The real danger is what happens next.</b> Inventions survive future sessions as durably as facts (90–100%). Telling the agent “I never said that — remove it” fails 20–70% of the time. In the strongest model we tested, deleted inventions <b>came back</b> two sessions later — re-derived from surrounding notes. And in a control test, the same model deleted denied <i>true</i> claims perfectly while keeping most of its inventions: <b>under correction, memory sheds truth more readily than invention.</b></p>
+  <p>We also proved the mechanism causally on real dialogues: take the same real conversations, delete two-thirds of the turns so gaps open up, and invention rates double or triple in three of four models. Gap-filling is the engine.</p>
+</div>
+
 <!-- NOVELTY -->
 <div class="col">
   <h2>Is it new?</h2>
@@ -521,9 +531,9 @@
 <div class="col"><h2>The paper</h2>
   <p>For readers who want the formal version: below is the working ACL submission, abridged to its four core sections — the abstract, the introduction, the related work (with venue-labelled citations), and the results. Everything above on this page is the plain-language telling of exactly these sections.</p></div>
 <figure class="wide" style="margin-top:8px"><div class="aclpaper">
-  <div class="pt">Inference as Fact: Capability-Scaled Provenance Collapse in Self-Authored Agent Memory</div>
+  <div class="pt">Inference as Fact: Provenance Collapse and Its Dynamics in Self-Authored Agent Memory</div>
   <div class="pa">VelaOps Research · <span class="aff">working draft · target ACL 2027 (main)</span></div>
-  <div class="abs"><b>Abstract.</b> Large language model (LLM) agents increasingly maintain their own persistent natural-language memory: notes the model writes to itself and re-reads across sessions. We identify and measure a write-time failure we call <i>provenance collapse</i>: the agent records unsupported inferences as flat declarative facts the user never stated. This is a <i>commission</i> error — fabricating content — and is distinct from the omission and recall failures that existing memory benchmarks measure. Across 30 controlled sessions and 10 models from 5 vendors, provenance collapse scales with model capability: a small base model (Llama-4-17B) collapses on 7.1% of self-authored claims, whereas every larger, frontier, or reasoning model — including GPT-5 and DeepSeek-V4-pro — collapses on 22–40% (all Fisher one-sided p ≤ 0.0003). The effect is a capability threshold that persists at the frontier and grows with input ambiguity. We validate the metric with cross-family LLM-judge agreement (Cohen's κ = 0.63–0.68). Finally, the failure is largely fixable at the prompt level: a provenance-disciplined consolidation instruction reduces collapse by 60–97% (McNemar p ≤ 0.0034) while preserving stated-fact recall. To our knowledge this is the first LLM-agent memory failure shown to intensify with capability rather than diminish.</div>
+  <div class="abs"><b>Abstract.</b> LLM agents increasingly maintain persistent natural-language memory: notes the model writes to itself and re-reads across sessions. We measure a write-time failure we call <i>provenance collapse</i> — the agent records unsupported inferences as flat declarative facts the user never stated — and characterize its prevalence, mechanism, truth status, and dynamics. Across 30 controlled sessions, 14 models from 9 vendors collapse on 6–40% of self-authored claims; severity is predicted by model family and training style rather than scale. The mechanism is gap-filling: sparsifying real dialogues causally doubles collapse. Most invented claims are plausibly true (69%), so the failure is epistemic status, not falsity — and the danger lies in the dynamics: inventions persist as durably as facts, resist explicit user denial (20–70% failure), resurrect after deletion, and outlive true claims under correction pressure. A provenance-disciplined prompt cuts collapse 60–97% while preserving stated-fact recall.</div>
   <div class="aclcols">
     <h5><span class="s">1</span>Introduction</h5>
     <p>Conversational assistants increasingly persist state across sessions by writing their own long-term memory — summaries, profiles, and notes that the model authors, re-reads, and rewrites over time (Park et al., UIST 2023; Packer et al., 2023; Zhong et al., AAAI 2024). This memory then conditions all later behaviour, so its faithfulness is a safety property of the system, not a cosmetic one.</p>
