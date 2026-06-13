@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Inference as Fact — Provenance Collapse in Self-Authored Agent Memory</title>
-<meta name="description" content="A smart AI agent writes notes in its own memory — and often records a guess as a fact the user never stated. We measure this 'provenance collapse' across 10 models and 5 vendors, and find it grows with capability." />
+<meta name="description" content="A smart AI agent writes notes in its own memory — and records guesses as facts the user never stated. We measure this 'provenance collapse' across 16 models and 11 vendors: it is universal, mostly-true, persistent, and resists correction." />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -182,9 +182,9 @@
 <div class="masthead"><div class="col"><span><b>Provenance Collapse</b></span><span>VelaOps Research · 2026</span></div></div>
 
 <div class="titleblock"><div class="col">
-  <div class="eyebrow">A failure that grows as models get smarter</div>
+  <div class="eyebrow">A failure in every model we tested — 16 models, 11 vendors</div>
   <h1>Inference as Fact: when an AI agent writes its own memory, it writes down things you never said.</h1>
-  <p class="dek">A smart assistant keeps a private notebook about you. We found that every model we tested — 14 models from 9 companies — fills that notebook with guesses recorded as facts. Most of the guesses are even right. The problem: once written, they are permanent, they resist correction, and they can come back after deletion. Here is the whole story, in plain words.</p>
+  <p class="dek">A smart assistant keeps a private notebook about you. We found that every model we tested — 16 models from 11 companies — fills that notebook with guesses recorded as facts. Most of the guesses are even right. The problem: once written, they are permanent, they resist correction, and they can come back after deletion. Here is the whole story, in plain words.</p>
   <div class="byline"><b>VelaOps Research</b> · prepared for academic review · June 2026 · target venue ACL 2027</div>
 </div></div>
 
@@ -234,7 +234,7 @@
   <p>Our first idea was simple. We thought an agent's memory slowly changes meaning each time the model rewrites it, losing a little more on every pass. In small and mid-size models, this happened. Then we ran the same test on a top model, DeepSeek V4-pro. The change was <b>zero</b>. The problem got <i>smaller</i> as the model got better.</p>
   <p>That is fatal for a research paper. A weakness that shrinks as models improve is one that is already fixing itself — a reviewer would rightly ask why it matters. So we flipped the question, and that flip is the whole insight:</p>
   <blockquote>Stop looking for a bug that capability <span class="hl">cures</span>.<br>Find the bug that capability <span class="hl">causes</span>.</blockquote>
-  <p>The most important failures in AI safety — deception, scheming, over-confidence — are the ones that <i>require</i> intelligence to commit. A weak model cannot scheme; it is not capable enough. If a memory failure worked the same way, it would survive at the frontier by definition. A large literature search pointed us to one candidate, and the intuition was this: a capable model, handed a vague human message, does what it was trained to do — infer, and fill gaps. When it does that <i>while writing its own memory</i>, the inference gets saved as fact. A smarter model infers more, so it should corrupt its memory more.</p>
+  <p>The most important failures in AI safety — deception, scheming, over-confidence — are the ones that <i>require</i> intelligence to commit. A weak model cannot scheme; it is not capable enough. If a memory failure worked the same way, it would survive at the frontier by definition. A large literature search pointed us to one candidate, and the intuition was this: a capable model, handed a vague human message, does what it was trained to do — infer, and fill gaps. When it does that <i>while writing its own memory</i>, the inference gets saved as fact. A smarter model infers more — so we expected collapse to grow with capability. It did not: when we scaled the test up, <b>every</b> model collapsed (7–40%), and severity tracked <b>training and model family, not size</b>. The phenomenon is universal, not a frontier-only effect — which makes it a bigger problem, not a smaller one.</p>
 </div>
 
 <!-- WHAT IT IS -->
@@ -394,12 +394,12 @@
 
 <!-- RESULTS -->
 <div class="col"><h2>What we found</h2>
-  <p>Every model invents — 6% to 40% of the claims it writes, across 14 models from 9 companies. What predicts how much is not size but <b>training style and prompt format</b>: an 8-billion-parameter Qwen model invents more than GPT-5-mini, and a fill-in-the-boxes profile template quintuples even the most faithful model’s rate.</p></div>
+  <p>Every model invents — 6% to 40% of the claims it writes, across 16 models from 11 companies. What predicts how much is not size but <b>training style and prompt format</b>: an 8-billion-parameter Qwen model invents more than GPT-5-mini, and a fill-in-the-boxes profile template quintuples even the most faithful model’s rate.</p></div>
 <figure class="wide"><div class="frame"><div class="chartwrap">
-  <h4>Figure 4 · share of memory claims that are invented, by model</h4>
-  <div class="legend"><span><i style="background:#9bb0c2"></i>small base model</span><span><i style="background:#2f4a63"></i>larger / frontier / reasoning</span></div>
-  <canvas id="ladder" height="300"></canvas>
-</div></div><figcaption><b>Figure 4</b> Each model writing its own memory. The small base model (light) is faithful; every capable model (dark) invents far more. Every gap versus the small model is statistically significant (Fisher p ≤ 0.0003). Hover for counts.</figcaption></figure>
+  <h4>Figure 4 · share of memory claims that are invented — 16 models, 11 vendors</h4>
+  <div class="legend"><span><i style="background:#9bb0c2"></i>smallest base model (the one low point)</span><span><i style="background:#2f4a63"></i>everything else</span></div>
+  <canvas id="ladder" height="420"></canvas>
+</div></div><figcaption><b>Figure 4</b> Every model writing its own memory, sorted by invention rate. Only one small base model (light) stays low; all 15 others — across Meta, OpenAI, Qwen, DeepSeek, Mistral, Zhipu, Cohere, Moonshot, NVIDIA, MiniMax — land at 14–40%. Note an 8B Qwen model (30.2%) sits above GPT-5 (29.8%): <b>family and training, not size, set the rate</b>. Hover for counts.</figcaption></figure>
 
 <div class="col">
   <h3>A closer look at GPT-5</h3>
@@ -436,9 +436,9 @@
   <div class="keyfig">
     <div class="k"><div class="kn">κ 0.63</div><div class="kl">vs Qwen3-32B grader</div></div>
     <div class="k"><div class="kn">κ 0.68</div><div class="kl">vs gpt-oss-120B grader</div></div>
-    <div class="k"><div class="kn">κ 0.87</div><div class="kl">vs 3-grader majority</div></div>
+    <div class="k"><div class="kn">κ 0.93</div><div class="kl">vs a human (gold labels)</div></div>
   </div>
-  <p>Graders from different companies agree on the same calls (κ around 0.65 is “substantial” agreement). The metric is measuring something real, not one model's quirk. Gold human labels are being collected to finish this check.</p>
+  <p>Graders from different companies agree on the same calls (κ around 0.65 is “substantial”). And the decisive check is now in: a person hand-labeled a 40-claim sample blind, and agreed with the automated grader on the invention decision <b>97.5% of the time (κ = 0.93)</b> — and <b>100%</b> against the grader majority. Human-vs-grader agreement is <i>higher</i> than grader-vs-grader, so the metric tracks careful human judgment, not a model quirk. The one disagreement was a case where the human sided with the two underlying graders against the headline label — so the metric's majority never disagreed with the human.</p>
 </div>
 
 <!-- THE FIX -->
@@ -523,7 +523,18 @@
 <tr><td>Judge check<br>(judge-val)</td><td>Is the grader trustworthy?</td><td class="res">Two outside graders agree (κ&nbsp;0.63–0.68).</td></tr>
 <tr><td>The fix<br>(mitig)</td><td>Does a disciplined prompt reduce it?</td><td class="res">Yes — down 60–97% (p&nbsp;≤&nbsp;0.0034).</td></tr>
 <tr><td>Fix check<br>(recall)</td><td>Does the fix also throw away real facts?</td><td class="res">No — real facts kept within 3 points.</td></tr>
-<tr><td>Novelty<br>(deep-research)</td><td>Has anyone published this before?</td><td class="res"><b>No — unique</b> (104 search agents, ~190 papers).</td></tr>
+<tr><td>Novelty<br>(deep-research)</td><td>Has anyone published this before?</td><td class="res"><b>No — unique</b> (104 search agents, ~190 papers); anchored to HaluMem &amp; MemIR.</td></tr>
+<tr class="ph"><td colspan="3">Phase 4 — attacking our own result (after an external LLM critique)</td></tr>
+<tr><td>Bottom ladder + new families<br>(expansion)</td><td>Is it really about model size?</td><td class="res"><b>No.</b> 16 models / 11 vendors; 8B Qwen 30% &gt; GPT-5; size doesn't predict — training/family does.</td></tr>
+<tr><td>Truth-scoring<br>(truthscore)</td><td>Are the invented claims actually false?</td><td class="res"><b>No — 69% are true</b>, 14% indeterminate, ~0% false. It's an epistemic-status failure.</td></tr>
+<tr><td>Compounding<br>(compound)</td><td>Do inventions survive later sessions?</td><td class="res"><b>Yes — 90–100%</b>, as durable as true facts (sometimes more).</td></tr>
+<tr><td>Correction resistance<br>(correct)</td><td>Can the user delete an invention?</td><td class="res">Often not: denial fails <b>71% / 60% / 40% / 13–20%</b> (llama→qwen→gpt5mini→V4-pro).</td></tr>
+<tr><td>True-claim control<br>(correct-ctl)</td><td>Does it resist deleting <i>true</i> claims too?</td><td class="res"><b>No</b> — true claims delete cleanly (5–21%), yet inventions survive 71–95%: <b>fabrications outlive facts</b>; deleted inventions even <b>resurrect</b>.</td></tr>
+<tr><td>Real terse users<br>(OASST)</td><td>Does it appear on real user messages?</td><td class="res">Yes for Qwen (38%); model-dependent (GPT-5-mini 10%).</td></tr>
+<tr><td>Sparsification<br>(LoCoMo-sparse)</td><td>Is gap-filling the cause?</td><td class="res">Open gaps in real chats → invention <b>doubles</b> (causal).</td></tr>
+<tr><td>Production prompts + lenient judge</td><td>Is it a strawman-prompt or rigged-metric artifact?</td><td class="res">No — persists 9–36% under 3 production prompts; survives lenient grading (frontier still 10%).</td></tr>
+<tr><td>Multi-seed + harness audit</td><td>Is the headline stable / the code correct?</td><td class="res">Stable (22.4/26.5/19.3%); <b>23/23</b> statistics &amp; parsing tests pass.</td></tr>
+<tr><td>Human gold labels<br>(human-40)</td><td>Does a person agree with the grader?</td><td class="res"><b>Yes — 97.5%, κ = 0.93</b> (100% vs grader majority).</td></tr>
 </table>
 </div><figcaption><b>The full log.</b> Every experiment, in order. We also ran a few smaller exploratory probes (sycophancy, silent disagreement, decorative retrieval) that we set aside. The whole effort cost about <b>$0.30</b> in paid API calls — nearly everything ran on free model tiers.</figcaption></figure>
 
@@ -533,7 +544,7 @@
 <figure class="wide" style="margin-top:8px"><div class="aclpaper">
   <div class="pt">Inference as Fact: Provenance Collapse and Its Dynamics in Self-Authored Agent Memory</div>
   <div class="pa">VelaOps Research · <span class="aff">working draft · target ACL 2027 (main)</span></div>
-  <div class="abs"><b>Abstract.</b> LLM agents increasingly maintain persistent natural-language memory: notes the model writes to itself and re-reads across sessions. We measure a write-time failure we call <i>provenance collapse</i> — the agent records unsupported inferences as flat declarative facts the user never stated — and characterize its prevalence, mechanism, truth status, and dynamics. Across 30 controlled sessions, 14 models from 9 vendors collapse on 6–40% of self-authored claims; severity is predicted by model family and training style rather than scale. The mechanism is gap-filling: sparsifying real dialogues causally doubles collapse. Most invented claims are plausibly true (69%), so the failure is epistemic status, not falsity — and the danger lies in the dynamics: inventions persist as durably as facts, resist explicit user denial (20–70% failure), resurrect after deletion, and outlive true claims under correction pressure. A provenance-disciplined prompt cuts collapse 60–97% while preserving stated-fact recall.</div>
+  <div class="abs"><b>Abstract.</b> LLM agents increasingly maintain persistent natural-language memory: notes the model writes to itself and re-reads across sessions. We measure a write-time failure we call <i>provenance collapse</i> — the agent records unsupported inferences as flat declarative facts the user never stated — and characterize its prevalence, mechanism, truth status, and dynamics. Across 30 controlled sessions, 16 models from 11 vendors collapse on 6–40% of self-authored claims; severity is predicted by model family and training style rather than scale. The mechanism is gap-filling: sparsifying real dialogues causally doubles collapse. Most invented claims are plausibly true (69%), so the failure is epistemic status, not falsity — and the danger lies in the dynamics: inventions persist as durably as facts, resist explicit user denial (20–70% failure), resurrect after deletion, and outlive true claims under correction pressure. A provenance-disciplined prompt cuts collapse 60–97% while preserving stated-fact recall.</div>
   <div class="aclcols">
     <h5><span class="s">1</span>Introduction</h5>
     <p>Conversational assistants increasingly persist state across sessions by writing their own long-term memory — summaries, profiles, and notes that the model authors, re-reads, and rewrites over time (Park et al., UIST 2023; Packer et al., 2023; Zhong et al., AAAI 2024). This memory then conditions all later behaviour, so its faithfulness is a safety property of the system, not a cosmetic one.</p>
@@ -572,8 +583,8 @@
   <h2>What we are not claiming</h2>
   <p class="limit"><b>Magnitude depends on wording.</b> Exact rates shift with the prompt (one model fell to 2.4% under one phrasing). The ranking of models holds across wordings; we report per-prompt.</p>
   <p class="limit"><b>It is a threshold, not a smooth law.</b> The within-family steps at the top are directional but not individually significant.</p>
-  <p class="limit"><b>Grading is by model, checked by agreement.</b> Cross-family agreement is substantial (κ 0.63–0.68); gold human labels are still being collected.</p>
-  <p class="limit"><b>The conversations are controlled.</b> We use 30 hand-built sessions; testing on real long-term deployments is the next step.</p>
+  <p class="limit"><b>Grading is by model, validated by a human.</b> Cross-family grader agreement is substantial (κ 0.63–0.68) and human-vs-grader agreement is near-perfect (κ 0.93 on 40 claims, single annotator); a larger multi-annotator set is planned.</p>
+  <p class="limit"><b>The core conversations are controlled.</b> 30 hand-built sessions, complemented by real-dialogue arms (LoCoMo and OpenAssistant terse-user prompts); a larger natural corpus is future work.</p>
 </div>
 
 <!-- WHY IT MATTERS -->
@@ -650,7 +661,7 @@ const rb=document.getElementById('replayBtn');if(rb)rb.addEventListener('click',
 
 Chart.defaults.font.family="'IBM Plex Mono', monospace";Chart.defaults.font.size=12;Chart.defaults.color="#555";
 const AC="#2f4a63",ACL="#9bb0c2",ACLL="#c7d2dd";
-const ladderData=[{m:'Llama-4 17B',v:'Meta · base',r:7.1,n:'9/127',a:1},{m:'GPT-5-mini',v:'OpenAI',r:22.4,n:'32/143'},{m:'GLM-4.7',v:'Zhipu · reasoning',r:23.3,n:'35/150'},{m:'Llama-3.3 70B',v:'Meta · base',r:23.9,n:'39/163'},{m:'gpt-oss 120B',v:'OpenAI · reasoning',r:23.9,n:'27/113'},{m:'Mistral Large 3',v:'Mistral',r:24.3,n:'42/173'},{m:'DeepSeek V4-flash',v:'DeepSeek',r:25.5,n:'36/141'},{m:'GPT-5',v:'OpenAI · reasoning',r:29.8,n:'37/124'},{m:'DeepSeek V4-pro',v:'DeepSeek',r:30.1,n:'49/163'},{m:'Qwen3-32B',v:'Qwen · reasoning',r:39.8,n:'72/181'}];
+const ladderData=[{m:'Llama-4-Scout 17B',v:'Meta',r:7.1,n:'9/127',a:1},{m:'Llama-3.1 8B',v:'Meta',r:13.9,n:'35/251'},{m:'Nemotron-Nano 30B',v:'NVIDIA',r:16.2,n:'33/204'},{m:'Cohere Command-A',v:'Cohere',r:17.1,n:'19/111'},{m:'Moonshot Kimi-K2',v:'Moonshot',r:19.4,n:'24/124'},{m:'MiniMax-M2.7',v:'MiniMax',r:19.4,n:'21/108'},{m:'GPT-5-mini',v:'OpenAI',r:22.4,n:'32/143'},{m:'GLM-4.7',v:'Zhipu',r:23.3,n:'35/150'},{m:'gpt-oss 120B',v:'OpenAI',r:23.9,n:'27/113'},{m:'Llama-3.3 70B',v:'Meta',r:23.9,n:'39/163'},{m:'Mistral Large 3',v:'Mistral',r:24.3,n:'42/173'},{m:'DeepSeek V4-flash',v:'DeepSeek',r:25.5,n:'36/141'},{m:'GPT-5',v:'OpenAI',r:29.8,n:'37/124'},{m:'DeepSeek V4-pro',v:'DeepSeek',r:30.1,n:'49/163'},{m:'Qwen3 8B',v:'Qwen',r:30.2,n:'92/305'},{m:'Qwen3-32B',v:'Qwen',r:39.8,n:'72/181'}];
 let charts={};
 function mkLadder(){if(charts.l)return;charts.l=new Chart(document.getElementById('ladder'),{type:'bar',
   data:{labels:ladderData.map(d=>d.m),datasets:[{data:ladderData.map(d=>d.r),backgroundColor:ladderData.map(d=>d.a?ACL:AC),borderRadius:4,barThickness:20}]},
